@@ -66,4 +66,4 @@ MIT License - see [LICENSE](LICENSE)
 
 ## Disclaimer
 
-Developed with AI assistance (Gemini 2.0 Flash Thinking, Claude Sonnet 4.5, Claude Opus 4.5 (thinking mode)).
+Developed with AI assistance (Gemini 3 Flash, Claude Sonnet 4.5, Claude Opus 4.5 (thinking mode)).
