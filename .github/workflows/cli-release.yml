@@ -53,6 +53,8 @@ jobs:
 
   publish-pypi:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write  # Required for OIDC
     steps:
       - uses: actions/checkout@v4
       
@@ -62,7 +64,7 @@ jobs:
           python-version: '3.11'
       
       - name: Install build tools
-        run: pip install build twine
+        run: pip install build
       
       - name: Build package
         run: |
@@ -70,12 +72,9 @@ jobs:
           python -m build
       
       - name: Publish to PyPI
-        env:
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
-        run: |
-          cd apps/cli
-          twine upload dist/*
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: apps/cli/dist/
 
   create-release:
     needs: build-binaries
