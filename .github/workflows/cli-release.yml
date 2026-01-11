@@ -1,0 +1,107 @@
+name: CLI Release
+
+on:
+  push:
+    tags:
+      - 'cli-v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-binaries:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: linux
+            artifact: ets-vibes-linux
+          - os: windows-latest
+            target: windows
+            artifact: ets-vibes-windows.exe
+          - os: macos-latest
+            target: macos
+            artifact: ets-vibes-macos
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          cd apps/cli
+          python -m pip install --upgrade pip
+          pip install -e .
+          pip install pyinstaller
+
+      - name: Build binary
+        run: |
+          cd apps/cli
+          pyinstaller --onefile --name ${{ matrix.artifact }} ets_vibes/cli.py
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: apps/cli/dist/${{ matrix.artifact }}*
+
+  publish-pypi:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install build tools
+        run: pip install build twine
+      
+      - name: Build package
+        run: |
+          cd apps/cli
+          python -m build
+      
+      - name: Publish to PyPI
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
+        run: |
+          cd apps/cli
+          twine upload dist/*
+
+  create-release:
+    needs: build-binaries
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist/
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: CLI ${{ github.ref_name }}
+          files: dist/**/*
+          generate_release_notes: true
+          body: |
+            ## Installation
+            
+            ### PyPI
+            ```bash
+            pip install ets-vibes
+            ```
+            
+            ### Binaries
+            Download the appropriate binary for your platform below.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
