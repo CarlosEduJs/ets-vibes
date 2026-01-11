@@ -1,6 +1,6 @@
 [project]
 name = "ets-vibes"
-version = "1.0.0"
+version = "1.0.1"
 description = "Save Editor for Euro Truck Simulator 2 and American Truck Simulator"
 authors = [{ name = "Carlos" }]
 license = { text = "MIT" }
