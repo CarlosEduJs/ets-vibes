@@ -195,6 +195,30 @@ def quick_money(money: int = typer.Argument(50_000_000)):
                     pass
     console.print(f"[green]{edited} saves updated.[/green]")
 
+@app.command("quick-xp")
+def quick_xp(xp: int = typer.Argument(10_000_000)):
+    """Set XP for all saves."""
+    detector = ProfileDetector()
+    edited = 0
+    
+    with Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        console=console,
+    ) as progress:
+        task = progress.add_task("Processing...", total=None)
+        for profile in detector.get_profiles():
+            for save in detector.get_saves(profile):
+                try:
+                    editor = SaveEditor(save)
+                    editor.load()
+                    editor.document.set_property("experience_points", str(xp))
+                    editor.save()
+                    edited += 1
+                except:
+                    pass
+    console.print(f"[green]{edited} saves updated with {xp:,} XP.[/green]".replace(",", "."))
+
 @app.command("version")
 def show_version():
     """Show version info."""
