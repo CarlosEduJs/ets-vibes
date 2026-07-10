@@ -1,0 +1,3 @@
+{
+  "extends": "@ets-vibes/config/tsconfig.base.json"
+}

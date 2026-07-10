@@ -1,0 +1,8 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+
+# pnpm 11 blocks dependency lifecycle scripts unless they are approved here.
+# Entries are scoped to packages this generated stack can pull in.
+allowBuilds:
+  esbuild: true
