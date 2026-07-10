@@ -1,0 +1,11 @@
+[package]
+name = "ets-save-parser"
+version = "0.1.0"
+edition = "2021"
+description = "Parser for ETS2 save files (.sii)"
+
+[dependencies]
+ets-core = { path = "../ets-core" }
+serde = { version = "1", features = ["derive"] }
+quick-xml = "0.36"
+thiserror = "2"

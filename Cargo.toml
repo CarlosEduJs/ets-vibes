@@ -1,0 +1,7 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/ets-core",
+    "crates/ets-save-parser",
+    "apps/desktop/src-tauri",
+]

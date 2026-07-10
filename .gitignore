@@ -48,6 +48,10 @@ lerna-debug.log*
 coverage
 .nyc_output
 
+# Rust
+target/
+*.rs.bk
+
 # Misc
 *.tgz
 .cache

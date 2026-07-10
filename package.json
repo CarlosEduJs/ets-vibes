@@ -14,7 +14,11 @@
     "lint": "vp lint",
     "format": "vp fmt",
     "staged": "vp staged",
-    "prepare": "husky"
+    "prepare": "husky",
+    "cargo:check": "cargo check --workspace",
+    "cargo:fmt": "cargo fmt --all --check",
+    "cargo:clippy": "cargo clippy --workspace --all-targets -- -D warnings",
+    "cargo:build": "cargo build --workspace"
   },
   "dependencies": {
     "dotenv": "^17.4.2",
@@ -38,6 +42,10 @@
     "*": [
       "oxlint",
       "oxfmt --write"
+    ],
+    "*.rs": [
+      "cargo fmt -- --check",
+      "cargo clippy -- -D warnings"
     ]
   },
   "packageManager": "pnpm@11.11.0"

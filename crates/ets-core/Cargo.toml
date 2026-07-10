@@ -1,0 +1,10 @@
+[package]
+name = "ets-core"
+version = "0.1.0"
+edition = "2021"
+description = "Core types and models for ETS Vibes"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+thiserror = "2"
+anyhow = "1"
