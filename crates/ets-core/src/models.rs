@@ -1,23 +1,24 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Profile {
+pub struct ProfileData {
     pub name: String,
-    pub save_games: Vec<SaveGame>,
+    pub display_name: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SaveGame {
+pub struct SaveSummary {
     pub name: String,
     pub path: String,
-    pub level: u32,
-    pub money: f64,
-    pub distance_km: f64,
+    pub money: Option<i64>,
+    pub xp: Option<i64>,
+    pub level: Option<u32>,
+    pub distance_km: Option<f64>,
     pub current_truck: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct GameConfig {
+pub struct GameSettings {
     pub graphics: GraphicsConfig,
     pub audio: AudioConfig,
     pub controls: ControlsConfig,
