@@ -4,7 +4,7 @@ use std::sync::LazyLock;
 use crate::error::SaveError;
 
 static PROPERTY_RE: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"^\s*(?P<name>\w+(?:\[\d+\])?)\s*:\s*(?P<value>.+?)\s*$").unwrap()
+    Regex::new(r"(?m)^\s*(?P<name>\w+(?:\[\d+\])?)\s*:\s*(?P<value>.+?)\s*$").unwrap()
 });
 
 pub struct SiiDocument {
@@ -22,7 +22,7 @@ impl SiiDocument {
 
     pub fn get_property(&self, property_name: &str) -> Option<&str> {
         let escaped = regex::escape(property_name);
-        let pattern = format!(r"^\s*{}\s*:\s*(.+?)\s*$", escaped);
+        let pattern = format!(r"(?m)^\s*{}\s*:\s*(.+?)\s*$", escaped);
         let re = Regex::new(&pattern).ok()?;
         let cap = re.captures(&self.content)?;
         Some(cap.get(1)?.as_str())
@@ -34,7 +34,7 @@ impl SiiDocument {
         new_value: &str,
     ) -> Result<bool, SaveError> {
         let escaped = regex::escape(property_name);
-        let pattern = format!(r"(^\s*{})\s*:\s*.+?(\s*$)", escaped);
+        let pattern = format!(r"(?m)(^\s*{})\s*:\s*.+?(\s*$)", escaped);
         let re = Regex::new(&pattern)?;
         let replacement = format!("${{1}}: {new_value}${{2}}");
         let new_content = re.replace_all(&self.content, replacement.as_str());

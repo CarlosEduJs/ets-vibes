@@ -1,0 +1,159 @@
+use std::path::{Path, PathBuf};
+
+use ets_core::{Profile, ProfileDetector, SaveFile};
+use ets_save_parser::{compression::decompress_save, editor::SaveEditor, sii::SiiDocument};
+use serde::Serialize;
+
+#[derive(Serialize)]
+pub struct SaveData {
+    pub money: Option<i64>,
+    pub xp: Option<i64>,
+    pub money_account: Option<String>,
+    pub experience_points: Option<String>,
+    pub was_compressed: bool,
+}
+
+#[derive(Serialize)]
+pub struct ProfileInfo {
+    pub path: String,
+    pub name: String,
+    pub display_name: String,
+}
+
+#[derive(Serialize)]
+pub struct SaveInfo {
+    pub profile_path: String,
+    pub save_name: String,
+    pub path: String,
+    pub game_sii_path: String,
+}
+
+impl From<Profile> for ProfileInfo {
+    fn from(p: Profile) -> Self {
+        let display_name = p.display_name();
+        Self {
+            path: p.path.to_string_lossy().to_string(),
+            name: p.name,
+            display_name,
+        }
+    }
+}
+
+impl From<SaveFile> for SaveInfo {
+    fn from(s: SaveFile) -> Self {
+        Self {
+            profile_path: s.profile_path.to_string_lossy().to_string(),
+            save_name: s.save_name,
+            path: s.path.to_string_lossy().to_string(),
+            game_sii_path: s.game_sii_path.to_string_lossy().to_string(),
+        }
+    }
+}
+
+#[tauri::command]
+pub fn list_profiles() -> Result<Vec<ProfileInfo>, String> {
+    let detector = ProfileDetector::new();
+    let profiles = detector.get_profiles();
+    Ok(profiles.into_iter().map(ProfileInfo::from).collect())
+}
+
+#[tauri::command]
+pub fn get_saves(profile_path: String) -> Result<Vec<SaveInfo>, String> {
+    let profile = Profile {
+        path: PathBuf::from(&profile_path),
+        name: String::new(),
+    };
+    let detector = ProfileDetector::new();
+    let saves = detector.get_saves(&profile);
+    Ok(saves.into_iter().map(SaveInfo::from).collect())
+}
+
+#[tauri::command]
+pub fn load_save(game_sii_path: String) -> Result<SaveData, String> {
+    let data = std::fs::read(&game_sii_path).map_err(|e| e.to_string())?;
+    let was_compressed = data.len() >= 4 && &data[..4] == b"ScsC";
+    let content = decompress_save(&data).map_err(|e| e.to_string())?;
+
+    let doc = SiiDocument::new(content);
+
+    let money_account = doc.get_property("money_account").map(|s| s.to_string());
+    let experience_points = doc.get_property("experience_points").map(|s| s.to_string());
+
+    let money = money_account.as_ref().and_then(|s| s.parse::<i64>().ok());
+    let xp = experience_points
+        .as_ref()
+        .and_then(|s| s.parse::<i64>().ok());
+
+    Ok(SaveData {
+        money,
+        xp,
+        money_account,
+        experience_points,
+        was_compressed,
+    })
+}
+
+fn save_file_from_game_sii(game_sii_path: &str) -> Result<SaveFile, String> {
+    let path = Path::new(game_sii_path);
+    let save_name = path
+        .parent()
+        .and_then(|p| p.file_name())
+        .map(|n| n.to_string_lossy().to_string())
+        .ok_or_else(|| "Invalid save path: missing save directory".to_string())?;
+    let profile_path = path
+        .ancestors()
+        .nth(3)
+        .ok_or_else(|| "Invalid save path: missing profile directory".to_string())?
+        .to_path_buf();
+    Ok(SaveFile::new(profile_path, save_name))
+}
+
+#[tauri::command]
+pub fn edit_save(
+    game_sii_path: String,
+    money: Option<i64>,
+    xp: Option<i64>,
+) -> Result<String, String> {
+    let save_file = save_file_from_game_sii(&game_sii_path)?;
+
+    let mut editor = SaveEditor::new(save_file);
+    editor.load().map_err(|e| e.to_string())?;
+
+    let mut changes = Vec::new();
+
+    if let Some(amount) = money {
+        if editor.edit_money(amount).map_err(|e| e.to_string())? {
+            changes.push(format!("money -> {}", amount));
+        }
+    }
+
+    if let Some(xp_val) = xp {
+        if editor.edit_xp(xp_val).map_err(|e| e.to_string())? {
+            changes.push(format!("xp -> {}", xp_val));
+        }
+    }
+
+    editor.save().map_err(|e| e.to_string())?;
+
+    if changes.is_empty() {
+        Ok("No changes made.".into())
+    } else {
+        Ok(format!("Saved: {}", changes.join(", ")))
+    }
+}
+
+#[tauri::command]
+pub fn unlock_cities(game_sii_path: String) -> Result<String, String> {
+    let save_file = save_file_from_game_sii(&game_sii_path)?;
+
+    let mut editor = SaveEditor::new(save_file);
+    editor.load().map_err(|e| e.to_string())?;
+    let count = editor.unlock_all_cities().map_err(|e| e.to_string())?;
+    editor.save().map_err(|e| e.to_string())?;
+
+    if count > 0 {
+        Ok(format!("Unlocked {} cities!", count))
+    } else {
+        Ok("No new cities to unlock.".into())
+    }
+}

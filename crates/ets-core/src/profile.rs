@@ -1,8 +1,10 @@
 use std::path::PathBuf;
 
+use serde::Serialize;
+
 use crate::detection::{all_games, get_current_platform, GameConfig, Platform};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct SaveFile {
     pub profile_path: PathBuf,
     pub save_name: String,
@@ -23,7 +25,7 @@ impl SaveFile {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct Profile {
     pub path: PathBuf,
     pub name: String,

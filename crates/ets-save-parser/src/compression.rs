@@ -2,7 +2,9 @@ use std::io::{Read, Write};
 
 use aes::Aes256;
 use cbc::{Decryptor, Encryptor};
-use cipher::{block_padding::Pkcs7, BlockModeDecrypt, BlockModeEncrypt, KeyIvInit};
+use cipher::{
+    block_padding::NoPadding, block_padding::Pkcs7, BlockModeDecrypt, BlockModeEncrypt, KeyIvInit,
+};
 use flate2::read::ZlibDecoder;
 use flate2::write::ZlibEncoder;
 use flate2::Compression;
@@ -70,21 +72,23 @@ fn decrypt_scsc(data: &[u8]) -> Result<String, SaveError> {
     let decrypted_len = {
         let decrypted = Aes256CbcDec::new_from_slices(&AES_KEY, iv)
             .map_err(|e| SaveError::Crypto(format!("AES init failed: {e}")))?
-            .decrypt_padded::<Pkcs7>(&mut buf)
+            .decrypt_padded::<NoPadding>(&mut buf)
             .map_err(|e| SaveError::Crypto(format!("AES decrypt failed: {e}")))?;
         decrypted.len()
     };
-
     buf.truncate(decrypted_len);
 
     // Zlib decompress
     let mut decoder = ZlibDecoder::new(&buf[..]);
-    let mut result = String::new();
+    let mut result = Vec::new();
     decoder
-        .read_to_string(&mut result)
+        .read_to_end(&mut result)
         .map_err(|e| SaveError::Compression(format!("Zlib decompression failed: {e}")))?;
 
-    Ok(result)
+    let text = String::from_utf8(result)
+        .map_err(|e| SaveError::Compression(format!("Zlib output is not valid UTF-8: {e}")))?;
+
+    Ok(text)
 }
 
 pub fn compress_save(content: &str) -> Result<Vec<u8>, SaveError> {
