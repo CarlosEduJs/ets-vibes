@@ -50,6 +50,7 @@ interface EditResult {
 
 function App() {
   const [tab, setTab] = useState<"saves" | "config">("saves");
+  const [readOnly, setReadOnly] = useState(true);
 
   // Save editor state
   const [profiles, setProfiles] = useState<ProfileInfo[]>([]);
@@ -59,6 +60,9 @@ function App() {
   const [saveData, setSaveData] = useState<SaveData | null>(null);
   const [moneyInput, setMoneyInput] = useState("");
   const [xpInput, setXpInput] = useState("");
+
+  const [saveRename, setSaveRename] = useState("");
+  const [saveClone, setSaveClone] = useState("");
 
   // Config editor state
   const [configPaths, setConfigPaths] = useState<string[]>([]);
@@ -241,9 +245,105 @@ function App() {
     return true;
   }) ?? [];
 
+  // --- Profile / Save Management ---
+
+  const handleProfileDelete = useCallback(async () => {
+    if (!selectedProfile) return;
+    if (!confirm("Are you sure you want to delete this profile? A backup will be created.")) return;
+    setStatus("Deleting profile...");
+    try {
+      const result = await invoke<EditResult>("delete_profile", {
+        profilePath: selectedProfile,
+      });
+      setStatus(result.message);
+      setSelectedProfile(null);
+      setSaves([]);
+      setSelectedSave(null);
+      setSaveData(null);
+      loadProfiles();
+    } catch (e) {
+      setStatus(`Error: ${e}`);
+    }
+  }, [selectedProfile, loadProfiles]);
+
+  const handleSaveRename = useCallback(async () => {
+    if (!selectedSave || !saveRename.trim()) return;
+    setStatus("Renaming save...");
+    try {
+      const result = await invoke<EditResult>("rename_save", {
+        gameSiiPath: selectedSave,
+        newName: saveRename.trim(),
+      });
+      setStatus(result.message);
+      setSaveRename("");
+      if (selectedProfile) {
+        const res = await invoke<SaveInfo[]>("get_saves", { profilePath: selectedProfile });
+        setSaves(res);
+      }
+      setSelectedSave(null);
+      setSaveData(null);
+    } catch (e) {
+      setStatus(`Error: ${e}`);
+    }
+  }, [selectedSave, saveRename, selectedProfile]);
+
+  const handleSaveClone = useCallback(async () => {
+    if (!selectedSave || !saveClone.trim()) return;
+    setStatus("Cloning save...");
+    try {
+      const result = await invoke<EditResult>("clone_save", {
+        gameSiiPath: selectedSave,
+        newName: saveClone.trim(),
+      });
+      setStatus(result.message);
+      setSaveClone("");
+      if (selectedProfile) {
+        const res = await invoke<SaveInfo[]>("get_saves", { profilePath: selectedProfile });
+        setSaves(res);
+      }
+    } catch (e) {
+      setStatus(`Error: ${e}`);
+    }
+  }, [selectedSave, saveClone, selectedProfile]);
+
+  const handleSaveDelete = useCallback(async () => {
+    if (!selectedSave) return;
+    if (!confirm("Are you sure you want to delete this save? A backup will be created.")) return;
+    setStatus("Deleting save...");
+    try {
+      const result = await invoke<EditResult>("delete_save", {
+        gameSiiPath: selectedSave,
+      });
+      setStatus(result.message);
+      setSelectedSave(null);
+      setSaveData(null);
+      if (selectedProfile) {
+        const res = await invoke<SaveInfo[]>("get_saves", { profilePath: selectedProfile });
+        setSaves(res);
+      }
+    } catch (e) {
+      setStatus(`Error: ${e}`);
+    }
+  }, [selectedSave, selectedProfile]);
+
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 p-6">
       <h1 className="text-2xl font-bold mb-4">ETS Vibes</h1>
+
+      {/* Read-Only Toggle */}
+      <div className="flex items-center gap-2 mb-4 text-sm">
+        <button
+          onClick={() => setReadOnly(!readOnly)}
+          className={`px-3 py-1 rounded text-xs font-medium ${
+            readOnly ? "bg-yellow-800 text-yellow-200" : "bg-green-800 text-green-200"
+          }`}
+        >
+          {readOnly ? "🔒 Read Only" : "✏️ Editing Enabled"}
+        </button>
+        <span className="text-zinc-600 text-xs">
+          {readOnly ? "Enable to make changes" : "All edits will modify files"}
+        </span>
+      </div>
 
       {/* Tabs */}
       <div className="flex gap-4 mb-6 border-b border-zinc-800 pb-2">
@@ -280,6 +380,18 @@ function App() {
             </div>
           )}
 
+          {selectedProfile && (
+            <div className="mb-4 p-3 bg-zinc-900 rounded border border-zinc-800">
+              <div className="flex items-center gap-2">
+                <button onClick={handleProfileDelete} disabled={readOnly}
+                  className="px-2 py-1 bg-red-800 hover:bg-red-700 rounded text-xs disabled:opacity-40">
+                  Delete Profile
+                </button>
+                <span className="text-xs text-zinc-600">Profile name is set by the game and cannot be renamed</span>
+              </div>
+            </div>
+          )}
+
           {saves.length > 0 && (
             <div className="mb-6">
               <h2 className="text-sm font-semibold mb-2 text-zinc-400">Saves</h2>
@@ -289,6 +401,43 @@ function App() {
                     className={`px-3 py-1 rounded text-xs ${selectedSave === s.game_sii_path ? "bg-green-700" : "bg-zinc-800 hover:bg-zinc-700"}`}
                   >{s.save_name}</button>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {selectedSave && (
+            <div className="mb-4 p-3 bg-zinc-900 rounded border border-zinc-800">
+              <div className="flex items-center gap-2 mb-2">
+                <input
+                  type="text"
+                  placeholder="New save name"
+                  value={saveRename}
+                  onChange={(e) => setSaveRename(e.target.value)}
+                  className="px-2 py-1 bg-zinc-800 rounded border border-zinc-700 text-xs w-40"
+                  disabled={readOnly}
+                />
+                <button onClick={handleSaveRename} disabled={readOnly}
+                  className="px-2 py-1 bg-blue-800 hover:bg-blue-700 rounded text-xs disabled:opacity-40">
+                  Rename
+                </button>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  placeholder="Clone name"
+                  value={saveClone}
+                  onChange={(e) => setSaveClone(e.target.value)}
+                  className="px-2 py-1 bg-zinc-800 rounded border border-zinc-700 text-xs w-40"
+                  disabled={readOnly}
+                />
+                <button onClick={handleSaveClone} disabled={readOnly}
+                  className="px-2 py-1 bg-purple-800 hover:bg-purple-700 rounded text-xs disabled:opacity-40">
+                  Clone
+                </button>
+                <button onClick={handleSaveDelete} disabled={readOnly}
+                  className="px-2 py-1 bg-red-800 hover:bg-red-700 rounded text-xs disabled:opacity-40">
+                  Delete
+                </button>
               </div>
             </div>
           )}
@@ -309,20 +458,27 @@ function App() {
                 <div>
                   <label className="block text-xs text-zinc-500 mb-1">Money</label>
                   <input type="number" value={moneyInput} onChange={(e) => setMoneyInput(e.target.value)}
-                    className="px-2 py-1 bg-zinc-800 rounded border border-zinc-700 text-xs w-32" />
+                    className="px-2 py-1 bg-zinc-800 rounded border border-zinc-700 text-xs w-32"
+                    disabled={readOnly} />
                 </div>
                 <div>
                   <label className="block text-xs text-zinc-500 mb-1">XP</label>
                   <input type="number" value={xpInput} onChange={(e) => setXpInput(e.target.value)}
-                    className="px-2 py-1 bg-zinc-800 rounded border border-zinc-700 text-xs w-32" />
+                    className="px-2 py-1 bg-zinc-800 rounded border border-zinc-700 text-xs w-32"
+                    disabled={readOnly} />
                 </div>
               </div>
               <div className="flex flex-wrap gap-2">
-                <button onClick={handleEdit} className="px-3 py-1 bg-green-800 hover:bg-green-700 rounded text-xs">Save Changes</button>
-                <button onClick={handleUnlock} className="px-3 py-1 bg-purple-800 hover:bg-purple-700 rounded text-xs">Unlock Cities</button>
-                <button onClick={handleMaxSkills} className="px-3 py-1 bg-yellow-800 hover:bg-yellow-700 rounded text-xs">Max Skills</button>
-                <button onClick={handleRepair} className="px-3 py-1 bg-blue-800 hover:bg-blue-700 rounded text-xs">Repair All</button>
-                <button onClick={handleRefuel} className="px-3 py-1 bg-orange-800 hover:bg-orange-700 rounded text-xs">Refuel All</button>
+                <button onClick={handleEdit} disabled={readOnly}
+                  className="px-3 py-1 bg-green-800 hover:bg-green-700 rounded text-xs disabled:opacity-40">Save Changes</button>
+                <button onClick={handleUnlock} disabled={readOnly}
+                  className="px-3 py-1 bg-purple-800 hover:bg-purple-700 rounded text-xs disabled:opacity-40">Unlock Cities</button>
+                <button onClick={handleMaxSkills} disabled={readOnly}
+                  className="px-3 py-1 bg-yellow-800 hover:bg-yellow-700 rounded text-xs disabled:opacity-40">Max Skills</button>
+                <button onClick={handleRepair} disabled={readOnly}
+                  className="px-3 py-1 bg-blue-800 hover:bg-blue-700 rounded text-xs disabled:opacity-40">Repair All</button>
+                <button onClick={handleRefuel} disabled={readOnly}
+                  className="px-3 py-1 bg-orange-800 hover:bg-orange-700 rounded text-xs disabled:opacity-40">Refuel All</button>
               </div>
             </div>
           )}
@@ -371,7 +527,8 @@ function App() {
                     <option key={c} value={c}>{c}</option>
                   ))}
                 </select>
-                <button onClick={handleConfigSave} className="px-3 py-1 bg-green-800 hover:bg-green-700 rounded text-xs">
+                <button onClick={handleConfigSave} disabled={readOnly}
+                  className="px-3 py-1 bg-green-800 hover:bg-green-700 rounded text-xs disabled:opacity-40">
                   Save Config
                 </button>
               </div>
