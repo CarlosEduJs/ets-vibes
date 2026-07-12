@@ -1,6 +1,18 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TruckInfo {
+    pub index: u32,
+    pub license_plate: Option<String>,
+    pub odometer_km: Option<f64>,
+    pub fuel_relative: Option<f64>,
+    pub engine_wear: Option<f64>,
+    pub transmission_wear: Option<f64>,
+    pub cabin_wear: Option<f64>,
+    pub chassis_wear: Option<f64>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ProfileData {
     pub name: String,
     pub display_name: String,

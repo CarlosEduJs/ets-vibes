@@ -1,8 +1,9 @@
 use std::path::{Path, PathBuf};
 
-use ets_core::{backup_file, Profile, ProfileDetector, SaveFile};
+use ets_core::{backup_file, Profile, ProfileDetector, SaveFile, TruckInfo};
 use ets_save_parser::{
-    compression::decompress_save, config::ConfigDocument, editor::SaveEditor, sii::SiiDocument,
+    compression::decompress_save, config::ConfigDocument, editor::SaveEditor,
+    editor::get_trucks_info, sii::SiiDocument,
 };
 use serde::Serialize;
 
@@ -14,6 +15,7 @@ pub struct SaveData {
     pub trucks_count: Option<u32>,
     pub drivers_count: Option<u32>,
     pub hq_city: Option<String>,
+    pub trucks: Vec<TruckInfo>,
     pub money_account: Option<String>,
     pub experience_points: Option<String>,
     pub was_compressed: bool,
@@ -113,6 +115,13 @@ pub fn load_save(game_sii_path: String) -> Result<SaveData, String> {
 
     let hq_city = doc.get_property("hq_city").map(|s| s.to_string());
 
+    let trucks = get_trucks_info(doc.content());
+    eprintln!("[debug] trucks count from property: {:?}", trucks_count);
+    eprintln!("[debug] get_trucks_info returned {} trucks", trucks.len());
+    for t in &trucks {
+        eprintln!("[debug]   truck {}: plate={:?} odo={:?} fuel={:?}", t.index, t.license_plate, t.odometer_km, t.fuel_relative);
+    }
+
     Ok(SaveData {
         money,
         xp,
@@ -120,6 +129,7 @@ pub fn load_save(game_sii_path: String) -> Result<SaveData, String> {
         trucks_count,
         drivers_count,
         hq_city,
+        trucks,
         money_account,
         experience_points,
         was_compressed,

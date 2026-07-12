@@ -1,8 +1,102 @@
-use ets_core::SaveFile;
+use ets_core::{SaveFile, TruckInfo};
 
 use crate::compression::{compress_save, decompress_save};
 use crate::error::SaveError;
 use crate::sii::SiiDocument;
+
+pub fn get_trucks_info(content: &str) -> Vec<TruckInfo> {
+    // Get truck references from the player section
+    let count = extract_property(content, "trucks")
+        .and_then(|v| v.parse::<u32>().ok())
+        .unwrap_or(0);
+
+    let mut trucks = Vec::new();
+    for i in 0..count {
+        let prop = format!("trucks[{}]", i);
+        let reference = match extract_property(content, &prop) {
+            Some(ref_str) => ref_str.trim().to_string(),
+            None => continue,
+        };
+
+        let section_content = match extract_section(content, &reference) {
+            Some(s) => s,
+            None => continue,
+        };
+
+        let license_plate = extract_property(section_content, "license_plate")
+            .map(|s| s.trim_matches('"').to_string());
+        let odometer_km = extract_property(section_content, "odometer")
+            .and_then(|v| v.parse::<f64>().ok());
+        let fuel_relative = extract_property(section_content, "fuel_relative")
+            .and_then(parse_hex_float);
+
+        let engine_wear = extract_property(section_content, "engine_wear")
+            .and_then(parse_hex_float);
+        let transmission_wear = extract_property(section_content, "transmission_wear")
+            .and_then(parse_hex_float);
+        let cabin_wear = extract_property(section_content, "cabin_wear")
+            .and_then(parse_hex_float);
+        let chassis_wear = extract_property(section_content, "chassis_wear")
+            .and_then(parse_hex_float);
+
+        trucks.push(TruckInfo {
+            index: i,
+            license_plate,
+            odometer_km,
+            fuel_relative,
+            engine_wear,
+            transmission_wear,
+            cabin_wear,
+            chassis_wear,
+        });
+    }
+    trucks
+}
+
+fn parse_hex_float(s: &str) -> Option<f64> {
+    let trimmed = s.trim();
+    if let Ok(val) = trimmed.parse::<f64>() {
+        return Some(val);
+    }
+    let hex_str = trimmed.strip_prefix('&')?;
+    let bits = u32::from_str_radix(hex_str, 16).ok()?;
+    Some(f32::from_bits(bits) as f64)
+}
+
+fn extract_property<'a>(content: &'a str, name: &str) -> Option<&'a str> {
+    let escaped = regex::escape(name);
+    let pattern = format!(r"(?m)^\s*{}\s*:\s*(.+?)\s*$", escaped);
+    let re = regex::Regex::new(&pattern).ok()?;
+    let cap = re.captures(content)?;
+    Some(cap.get(1)?.as_str())
+}
+
+fn extract_section<'a>(content: &'a str, section_name: &str) -> Option<&'a str> {
+    let escaped = regex::escape(section_name);
+    // Section may be defined as "name {" or "type : name {"
+    let pattern = format!(r"(?m)^\s*(?:\S+\s+:\s+)?{}\s*\{{", escaped);
+    let re = regex::Regex::new(&pattern).ok()?;
+    let m = re.find(content)?;
+
+    let mut depth: i32 = 1;
+    let bytes = content.as_bytes();
+    let mut pos = m.end();
+
+    while pos < bytes.len() && depth > 0 {
+        match bytes[pos] {
+            b'{' => depth += 1,
+            b'}' => depth -= 1,
+            _ => {}
+        }
+        pos += 1;
+    }
+
+    if depth == 0 {
+        Some(&content[m.start()..pos])
+    } else {
+        None
+    }
+}
 
 pub struct SaveEditor {
     save_file: SaveFile,

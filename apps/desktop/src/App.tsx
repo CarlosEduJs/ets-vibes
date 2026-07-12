@@ -23,6 +23,17 @@ interface SaveInfo {
   path: string;
   game_sii_path: string;
 }
+interface TruckInfo {
+  index: number;
+  license_plate: string | null;
+  odometer_km: number | null;
+  fuel_relative: number | null;
+  engine_wear: number | null;
+  transmission_wear: number | null;
+  cabin_wear: number | null;
+  chassis_wear: number | null;
+}
+
 interface SaveData {
   money: number | null;
   xp: number | null;
@@ -30,6 +41,7 @@ interface SaveData {
   trucks_count: number | null;
   drivers_count: number | null;
   hq_city: string | null;
+  trucks: TruckInfo[];
   money_account: string | null;
   experience_points: string | null;
   was_compressed: boolean;
@@ -359,6 +371,8 @@ function App() {
     }
   }, [selectedSave, selectedProfile]);
 
+  
+
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 p-6">
       <h1 className="text-2xl font-bold mb-4">ETS Vibes</h1>
@@ -486,6 +500,27 @@ function App() {
                 <div>Drivers: {saveData.drivers_count ?? "N/A"}</div>
                 <div>HQ: {saveData.hq_city ?? "N/A"}</div>
               </div>
+              {saveData.trucks.length > 0 && (
+                <div className="mb-3 mt-4">
+                  <h3 className="text-sm font-semibold mb-2">Trucks</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {saveData.trucks.map((t) => (
+                      <div key={t.index} className="p-2 bg-zinc-800 rounded border border-zinc-700 text-xs">
+                        <div className="font-medium text-zinc-200 mb-1">Truck {t.index + 1}</div>
+                        <div className="text-zinc-400">
+                          {t.license_plate && <div>Plate: {t.license_plate}</div>}
+                          {t.odometer_km != null && <div>Odometer: {t.odometer_km.toLocaleString()} km</div>}
+                          {t.fuel_relative != null && <div>Fuel: {(t.fuel_relative * 100).toFixed(0)}%</div>}
+                          {t.engine_wear != null && <div>Engine: {(t.engine_wear * 100).toFixed(1)}%</div>}
+                          {t.transmission_wear != null && <div>Transmission: {(t.transmission_wear * 100).toFixed(1)}%</div>}
+                          {t.cabin_wear != null && <div>Cabin: {(t.cabin_wear * 100).toFixed(1)}%</div>}
+                          {t.chassis_wear != null && <div>Chassis: {(t.chassis_wear * 100).toFixed(1)}%</div>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
               <h3 className="text-sm font-semibold mb-3 mt-4">Edit Values</h3>
               <div className="flex flex-wrap gap-3 mb-3">
                 <div>
