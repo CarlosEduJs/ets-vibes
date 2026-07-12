@@ -1,6 +1,6 @@
 use std::path::{Path, PathBuf};
 
-use ets_core::{Profile, ProfileDetector, SaveFile};
+use ets_core::{backup_file, Profile, ProfileDetector, SaveFile};
 use ets_save_parser::{
     compression::decompress_save, config::ConfigDocument, editor::SaveEditor, sii::SiiDocument,
 };
@@ -13,6 +13,12 @@ pub struct SaveData {
     pub money_account: Option<String>,
     pub experience_points: Option<String>,
     pub was_compressed: bool,
+}
+
+#[derive(Serialize)]
+pub struct EditResult {
+    pub message: String,
+    pub backup: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -115,7 +121,8 @@ pub fn edit_save(
     game_sii_path: String,
     money: Option<i64>,
     xp: Option<i64>,
-) -> Result<String, String> {
+) -> Result<EditResult, String> {
+    let file_path = Path::new(&game_sii_path);
     let save_file = save_file_from_game_sii(&game_sii_path)?;
 
     let mut editor = SaveEditor::new(save_file);
@@ -135,29 +142,43 @@ pub fn edit_save(
         }
     }
 
-    editor.save().map_err(|e| e.to_string())?;
-
-    if changes.is_empty() {
-        Ok("No changes made.".into())
+    let backup = if changes.is_empty() {
+        None
     } else {
-        Ok(format!("Saved: {}", changes.join(", ")))
-    }
+        let bp = backup_file(file_path).map_err(|e| e.to_string())?;
+        editor.save().map_err(|e| e.to_string())?;
+        Some(bp.to_string_lossy().to_string())
+    };
+
+    let message = backup
+        .as_ref()
+        .map(|b| format!("Saved (backup: {})", b))
+        .unwrap_or_else(|| "No changes made.".into());
+
+    Ok(EditResult { message, backup })
 }
 
 #[tauri::command]
-pub fn unlock_cities(game_sii_path: String) -> Result<String, String> {
+pub fn unlock_cities(game_sii_path: String) -> Result<EditResult, String> {
+    let file_path = Path::new(&game_sii_path);
     let save_file = save_file_from_game_sii(&game_sii_path)?;
 
     let mut editor = SaveEditor::new(save_file);
     editor.load().map_err(|e| e.to_string())?;
     let count = editor.unlock_all_cities().map_err(|e| e.to_string())?;
-    editor.save().map_err(|e| e.to_string())?;
 
-    if count > 0 {
-        Ok(format!("Unlocked {} cities!", count))
+    let (message, backup) = if count > 0 {
+        let bp = backup_file(file_path).map_err(|e| e.to_string())?;
+        editor.save().map_err(|e| e.to_string())?;
+        (
+            format!("Unlocked {} cities (backup: {})", count, bp.display()),
+            Some(bp.to_string_lossy().to_string()),
+        )
     } else {
-        Ok("No new cities to unlock.".into())
-    }
+        ("No new cities to unlock.".into(), None)
+    };
+
+    Ok(EditResult { message, backup })
 }
 
 // --- Config Editor ---
@@ -182,9 +203,17 @@ pub fn load_config(path: String) -> Result<ConfigDocument, String> {
 pub fn save_config(
     path: String,
     entries: Vec<ets_save_parser::ConfigEntry>,
-) -> Result<String, String> {
+) -> Result<EditResult, String> {
+    let file_path = Path::new(&path);
+    let backup = backup_file(file_path).map_err(|e| e.to_string())?;
+
     let doc = ConfigDocument { entries };
     let content = doc.to_string();
     std::fs::write(&path, content).map_err(|e| e.to_string())?;
-    Ok("Config saved".into())
+
+    let message = format!("Config saved (backup: {})", backup.display());
+    Ok(EditResult {
+        message,
+        backup: Some(backup.to_string_lossy().to_string()),
+    })
 }

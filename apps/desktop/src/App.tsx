@@ -39,6 +39,11 @@ interface ConfigDocument {
   entries: ConfigEntry[];
 }
 
+interface EditResult {
+  message: string;
+  backup: string | null;
+}
+
 function App() {
   const [tab, setTab] = useState<"saves" | "config">("saves");
 
@@ -113,10 +118,10 @@ function App() {
     }
     setStatus("Saving...");
     try {
-      const result = await invoke<string>("edit_save", {
+      const result = await invoke<EditResult>("edit_save", {
         gameSiiPath: selectedSave, money, xp,
       });
-      setStatus(result);
+      setStatus(result.message);
       selectSave(selectedSave);
     } catch (e) {
       setStatus(`Error: ${e}`);
@@ -127,8 +132,8 @@ function App() {
     if (!selectedSave) return;
     setStatus("Unlocking cities...");
     try {
-      const result = await invoke<string>("unlock_cities", { gameSiiPath: selectedSave });
-      setStatus(result);
+      const result = await invoke<EditResult>("unlock_cities", { gameSiiPath: selectedSave });
+      setStatus(result.message);
       selectSave(selectedSave);
     } catch (e) {
       setStatus(`Error: ${e}`);
@@ -167,8 +172,8 @@ function App() {
     if (!selectedConfig || !configDoc) return;
     setStatus("Saving config...");
     try {
-      await invoke("save_config", { path: selectedConfig, entries: configDoc.entries });
-      setStatus("Config saved");
+      const result = await invoke<EditResult>("save_config", { path: selectedConfig, entries: configDoc.entries });
+      setStatus(result.message);
     } catch (e) {
       setStatus(`Error: ${e}`);
     }
