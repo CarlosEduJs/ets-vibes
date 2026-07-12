@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import * as v from "valibot";
 
 function formatKeyName(key: string): string {
   const parts = key.split("_");
@@ -33,14 +34,42 @@ interface SaveData {
   experience_points: string | null;
   was_compressed: boolean;
 }
+type ConfigValueType = "Int" | "Float" | "Bool" | "String";
+
 interface ConfigEntry {
   prefix: string;
   key: string;
   value: string;
   category: string;
+  value_type: ConfigValueType;
 }
 interface ConfigDocument {
   entries: ConfigEntry[];
+}
+
+const IntSchema = v.pipe(v.string(), v.regex(/^-?\d+$/));
+const FloatSchema = v.pipe(v.string(), v.regex(/^-?\d*\.?\d+$/));
+const BoolSchema = v.union([
+  v.literal("0"), v.literal("1"),
+  v.literal("true"), v.literal("false"),
+]);
+
+function validateValue(value: string, type: ConfigValueType): string | null {
+  const result = v.safeParse(
+    type === "Int" ? IntSchema :
+    type === "Float" ? FloatSchema :
+    type === "Bool" ? BoolSchema :
+    v.string(),
+    value
+  );
+  if (result.success) return null;
+  const issue = result.issues[0];
+  if (issue) {
+    if (type === "Int") return "Expected an integer";
+    if (type === "Float") return "Expected a number";
+    if (type === "Bool") return "Expected 0, 1, true, or false";
+  }
+  return "Invalid value";
 }
 
 interface EditResult {
@@ -70,6 +99,7 @@ function App() {
   const [configDoc, setConfigDoc] = useState<ConfigDocument | null>(null);
   const [configFilter, setConfigFilter] = useState("");
   const [configCategory, setConfigCategory] = useState("");
+  const [configErrors, setConfigErrors] = useState<Record<string, string | null>>({});
 
   const [status, setStatus] = useState("");
 
@@ -202,6 +232,7 @@ function App() {
     setConfigDoc(null);
     setConfigFilter("");
     setConfigCategory("");
+    setConfigErrors({});
     setStatus("Loading config...");
     try {
       const result = await invoke<ConfigDocument>("load_config", { path });
@@ -223,8 +254,10 @@ function App() {
     }
   }, [selectedConfig, configDoc]);
 
-  const handleConfigValueChange = useCallback((key: string, value: string) => {
+  const handleConfigValueChange = useCallback((key: string, value: string, type: ConfigValueType) => {
     if (!configDoc) return;
+    const error = validateValue(value, type);
+    setConfigErrors((prev) => ({ ...prev, [key]: error }));
     setConfigDoc({
       ...configDoc,
       entries: configDoc.entries.map((e) =>
@@ -527,11 +560,18 @@ function App() {
                     <option key={c} value={c}>{c}</option>
                   ))}
                 </select>
-                <button onClick={handleConfigSave} disabled={readOnly}
+                <button onClick={handleConfigSave}
+                  disabled={readOnly || Object.values(configErrors).some((e) => e !== null)}
                   className="px-3 py-1 bg-green-800 hover:bg-green-700 rounded text-xs disabled:opacity-40">
                   Save Config
                 </button>
               </div>
+
+              {Object.values(configErrors).some((e) => e !== null) && (
+                <div className="mb-3 text-xs text-red-400">
+                  Fix validation errors before saving
+                </div>
+              )}
 
               <div className="overflow-x-auto">
                 <table className="w-full text-xs">
@@ -539,24 +579,41 @@ function App() {
                     <tr className="text-zinc-500 border-b border-zinc-800">
                       <th className="text-left py-1 pr-2">Key</th>
                       <th className="text-left py-1 pr-2">Value</th>
+                      <th className="text-left py-1">Type</th>
                       <th className="text-left py-1">Category</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredEntries.map((e) => (
-                      <tr key={e.key} className="border-b border-zinc-900 hover:bg-zinc-900">
-                        <td className="py-1 pr-2 text-zinc-300 whitespace-nowrap">{formatKeyName(e.key)}</td>
-                        <td className="py-1 pr-2">
-                          <input
-                            type="text"
-                            value={e.value}
-                            onChange={(ev) => handleConfigValueChange(e.key, ev.target.value)}
-                            className="w-full bg-transparent border-b border-transparent hover:border-zinc-700 focus:border-blue-500 outline-none text-xs"
-                          />
-                        </td>
-                        <td className="py-1 text-zinc-500 whitespace-nowrap">{e.category}</td>
-                      </tr>
-                    ))}
+                    {filteredEntries.map((e) => {
+                      const error = configErrors[e.key];
+                      return (
+                        <tr key={e.key} className="border-b border-zinc-900 hover:bg-zinc-900">
+                          <td className="py-1 pr-2 text-zinc-300 whitespace-nowrap">{formatKeyName(e.key)}</td>
+                          <td className="py-1 pr-2">
+                            <div className="flex items-center gap-1">
+                              <input
+                                type="text"
+                                value={e.value}
+                                onChange={(ev) => handleConfigValueChange(e.key, ev.target.value, e.value_type)}
+                                className={`w-full bg-transparent border-b outline-none text-xs ${
+                                  error
+                                    ? "border-red-600 text-red-300"
+                                    : "border-transparent hover:border-zinc-700 focus:border-blue-500"
+                                }`}
+                              />
+                              {error && (
+                                <span className="text-red-400 text-xs shrink-0" title={error}>⚠</span>
+                              )}
+                            </div>
+                            {error && (
+                              <div className="text-red-500 text-[10px] mt-0.5">{error}</div>
+                            )}
+                          </td>
+                          <td className="py-1 pr-2 text-zinc-500 whitespace-nowrap text-[10px]">{e.value_type}</td>
+                          <td className="py-1 text-zinc-500 whitespace-nowrap">{e.category}</td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

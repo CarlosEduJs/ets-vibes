@@ -1,12 +1,63 @@
 use ets_core::config_category::{categorize, ConfigCategory};
 use serde::{Deserialize, Serialize};
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ConfigValueType {
+    Int,
+    Float,
+    Bool,
+    String,
+}
+
+impl ConfigValueType {
+    pub fn infer_from_value(value: &str) -> Self {
+        if value.parse::<i64>().is_ok() {
+            if matches!(value, "0" | "1") {
+                // Could be bool, but int is more common - check value
+                // 0 and 1 are valid as both, default to Int
+                Self::Int
+            } else {
+                Self::Int
+            }
+        } else if value.parse::<f64>().is_ok() {
+            Self::Float
+        } else if matches!(value, "true" | "false" | "True" | "False" | "TRUE" | "FALSE") {
+            Self::Bool
+        } else {
+            Self::String
+        }
+    }
+
+    pub fn validate(&self, value: &str) -> Result<(), String> {
+        match self {
+            Self::Int => match value.parse::<i64>() {
+                Ok(_) => Ok(()),
+                Err(_) => Err(format!("Expected integer, got '{}'", value)),
+            },
+            Self::Float => match value.parse::<f64>() {
+                Ok(_) => Ok(()),
+                Err(_) => Err(format!("Expected number, got '{}'", value)),
+            },
+            Self::Bool => {
+                if matches!(value, "0" | "1" | "true" | "false" | "True" | "False" | "TRUE" | "FALSE") {
+                    Ok(())
+                } else {
+                    Err(format!("Expected boolean (0/1/true/false), got '{}'", value))
+                }
+            }
+            Self::String => Ok(()),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ConfigEntry {
     pub prefix: String,
     pub key: String,
     pub value: String,
     pub category: ConfigCategory,
+    #[serde(rename = "value_type")]
+    pub val_type: ConfigValueType,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -36,11 +87,13 @@ impl ConfigDocument {
             let value = parts.next().unwrap_or("").trim_matches('"').to_string();
 
             let category = categorize(&key);
+            let val_type = ConfigValueType::infer_from_value(&value);
             entries.push(ConfigEntry {
                 prefix,
                 key,
                 value,
                 category,
+                val_type,
             });
         }
 

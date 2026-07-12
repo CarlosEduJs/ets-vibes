@@ -358,6 +358,18 @@ pub fn save_config(
     path: String,
     entries: Vec<ets_save_parser::ConfigEntry>,
 ) -> Result<EditResult, String> {
+    // Validate all entries before saving
+    let mut errors: Vec<String> = Vec::new();
+    for entry in &entries {
+        if let Err(msg) = entry.val_type.validate(&entry.value) {
+            errors.push(format!("{}: {}", entry.key, msg));
+        }
+    }
+
+    if !errors.is_empty() {
+        return Err(format!("Validation errors:\n{}", errors.join("\n")));
+    }
+
     let file_path = Path::new(&path);
     let backup = backup_file(file_path).map_err(|e| e.to_string())?;
 
