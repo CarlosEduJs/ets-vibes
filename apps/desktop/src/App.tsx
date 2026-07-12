@@ -144,6 +144,42 @@ function App() {
     }
   }, [selectedSave, selectSave]);
 
+  const handleMaxSkills = useCallback(async () => {
+    if (!selectedSave) return;
+    setStatus("Maxing skills...");
+    try {
+      const result = await invoke<EditResult>("max_skills", { gameSiiPath: selectedSave });
+      setStatus(result.message);
+      selectSave(selectedSave);
+    } catch (e) {
+      setStatus(`Error: ${e}`);
+    }
+  }, [selectedSave, selectSave]);
+
+  const handleRepair = useCallback(async () => {
+    if (!selectedSave) return;
+    setStatus("Repairing...");
+    try {
+      const result = await invoke<EditResult>("repair_all", { gameSiiPath: selectedSave });
+      setStatus(result.message);
+      selectSave(selectedSave);
+    } catch (e) {
+      setStatus(`Error: ${e}`);
+    }
+  }, [selectedSave, selectSave]);
+
+  const handleRefuel = useCallback(async () => {
+    if (!selectedSave) return;
+    setStatus("Refueling...");
+    try {
+      const result = await invoke<EditResult>("refuel_all", { gameSiiPath: selectedSave });
+      setStatus(result.message);
+      selectSave(selectedSave);
+    } catch (e) {
+      setStatus(`Error: ${e}`);
+    }
+  }, [selectedSave, selectSave]);
+
   // --- Config Editor ---
 
   const loadConfigs = useCallback(async () => {
@@ -281,9 +317,12 @@ function App() {
                     className="px-2 py-1 bg-zinc-800 rounded border border-zinc-700 text-xs w-32" />
                 </div>
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <button onClick={handleEdit} className="px-3 py-1 bg-green-800 hover:bg-green-700 rounded text-xs">Save Changes</button>
                 <button onClick={handleUnlock} className="px-3 py-1 bg-purple-800 hover:bg-purple-700 rounded text-xs">Unlock Cities</button>
+                <button onClick={handleMaxSkills} className="px-3 py-1 bg-yellow-800 hover:bg-yellow-700 rounded text-xs">Max Skills</button>
+                <button onClick={handleRepair} className="px-3 py-1 bg-blue-800 hover:bg-blue-700 rounded text-xs">Repair All</button>
+                <button onClick={handleRefuel} className="px-3 py-1 bg-orange-800 hover:bg-orange-700 rounded text-xs">Refuel All</button>
               </div>
             </div>
           )}

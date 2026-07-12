@@ -109,6 +109,63 @@ impl SaveEditor {
         Ok(to_add.len())
     }
 
+    pub fn max_skills(&mut self) -> Result<Vec<String>, SaveError> {
+        let doc = self.document_mut()?;
+        let mut changed = Vec::new();
+
+        let skills = [
+            ("adr", "63"),
+            ("long_dist", "6"),
+            ("heavy", "6"),
+            ("fragile", "6"),
+            ("urgent", "6"),
+            ("mechanical", "6"),
+        ];
+
+        for (name, value) in &skills {
+            if doc.set_property(name, value)? {
+                changed.push(format!("{} -> {}", name, value));
+            }
+        }
+
+        Ok(changed)
+    }
+
+    pub fn repair_all(&mut self) -> Result<Vec<String>, SaveError> {
+        let doc = self.document_mut()?;
+        let mut changed = Vec::new();
+
+        let wear_props = [
+            "engine_wear",
+            "engine_wear_unfixable",
+            "transmission_wear",
+            "transmission_wear_unfixable",
+            "cabin_wear",
+            "cabin_wear_unfixable",
+            "chassis_wear",
+            "chassis_wear_unfixable",
+        ];
+
+        for name in &wear_props {
+            if doc.set_property(name, "0")? {
+                changed.push(name.to_string());
+            }
+        }
+
+        Ok(changed)
+    }
+
+    pub fn refuel_all(&mut self) -> Result<Vec<String>, SaveError> {
+        let doc = self.document_mut()?;
+        let mut changed = Vec::new();
+
+        if doc.set_property("fuel_relative", "1.0")? {
+            changed.push("fuel_relative -> 1.0".to_string());
+        }
+
+        Ok(changed)
+    }
+
     pub fn save(&mut self) -> Result<(), SaveError> {
         let content = self.document()?.content().to_string();
         std::fs::write(&self.save_file.game_sii_path, content.as_bytes())?;

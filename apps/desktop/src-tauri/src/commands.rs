@@ -184,6 +184,75 @@ pub fn edit_save(
 }
 
 #[tauri::command]
+pub fn max_skills(game_sii_path: String) -> Result<EditResult, String> {
+    let file_path = Path::new(&game_sii_path);
+    let save_file = save_file_from_game_sii(&game_sii_path)?;
+
+    let mut editor = SaveEditor::new(save_file);
+    editor.load().map_err(|e| e.to_string())?;
+    let changes = editor.max_skills().map_err(|e| e.to_string())?;
+
+    let (message, backup) = if changes.is_empty() {
+        ("Skills already maxed.".into(), None)
+    } else {
+        let bp = backup_file(file_path).map_err(|e| e.to_string())?;
+        editor.save().map_err(|e| e.to_string())?;
+        (
+            format!("Skills maxed (backup: {})", bp.display()),
+            Some(bp.to_string_lossy().to_string()),
+        )
+    };
+
+    Ok(EditResult { message, backup })
+}
+
+#[tauri::command]
+pub fn repair_all(game_sii_path: String) -> Result<EditResult, String> {
+    let file_path = Path::new(&game_sii_path);
+    let save_file = save_file_from_game_sii(&game_sii_path)?;
+
+    let mut editor = SaveEditor::new(save_file);
+    editor.load().map_err(|e| e.to_string())?;
+    let changes = editor.repair_all().map_err(|e| e.to_string())?;
+
+    let (message, backup) = if changes.is_empty() {
+        ("Everything already repaired.".into(), None)
+    } else {
+        let bp = backup_file(file_path).map_err(|e| e.to_string())?;
+        editor.save().map_err(|e| e.to_string())?;
+        (
+            format!("Repaired: {} (backup: {})", changes.join(", "), bp.display()),
+            Some(bp.to_string_lossy().to_string()),
+        )
+    };
+
+    Ok(EditResult { message, backup })
+}
+
+#[tauri::command]
+pub fn refuel_all(game_sii_path: String) -> Result<EditResult, String> {
+    let file_path = Path::new(&game_sii_path);
+    let save_file = save_file_from_game_sii(&game_sii_path)?;
+
+    let mut editor = SaveEditor::new(save_file);
+    editor.load().map_err(|e| e.to_string())?;
+    let changes = editor.refuel_all().map_err(|e| e.to_string())?;
+
+    let (message, backup) = if changes.is_empty() {
+        ("Everything already refueled.".into(), None)
+    } else {
+        let bp = backup_file(file_path).map_err(|e| e.to_string())?;
+        editor.save().map_err(|e| e.to_string())?;
+        (
+            format!("Refueled (backup: {})", bp.display()),
+            Some(bp.to_string_lossy().to_string()),
+        )
+    };
+
+    Ok(EditResult { message, backup })
+}
+
+#[tauri::command]
 pub fn unlock_cities(game_sii_path: String) -> Result<EditResult, String> {
     let file_path = Path::new(&game_sii_path);
     let save_file = save_file_from_game_sii(&game_sii_path)?;
