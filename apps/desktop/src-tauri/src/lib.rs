@@ -10,6 +10,9 @@ pub fn run() {
             commands::load_save,
             commands::edit_save,
             commands::unlock_cities,
+            commands::list_configs,
+            commands::load_config,
+            commands::save_config,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

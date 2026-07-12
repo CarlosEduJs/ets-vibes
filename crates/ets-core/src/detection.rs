@@ -157,3 +157,19 @@ pub fn detect_installed_games() -> Vec<&'static GameConfig> {
 pub fn all_games() -> &'static [GameConfig] {
     SUPPORTED_GAMES
 }
+
+pub fn find_config_files() -> Vec<PathBuf> {
+    let platform = get_current_platform();
+    let mut configs = Vec::new();
+
+    for game in SUPPORTED_GAMES {
+        for path in game.get_paths(platform) {
+            let config = path.join("config.cfg");
+            if config.exists() {
+                configs.push(config);
+            }
+        }
+    }
+
+    configs
+}

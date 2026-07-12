@@ -1,7 +1,9 @@
 use std::path::{Path, PathBuf};
 
 use ets_core::{Profile, ProfileDetector, SaveFile};
-use ets_save_parser::{compression::decompress_save, editor::SaveEditor, sii::SiiDocument};
+use ets_save_parser::{
+    compression::decompress_save, config::ConfigDocument, editor::SaveEditor, sii::SiiDocument,
+};
 use serde::Serialize;
 
 #[derive(Serialize)]
@@ -156,4 +158,33 @@ pub fn unlock_cities(game_sii_path: String) -> Result<String, String> {
     } else {
         Ok("No new cities to unlock.".into())
     }
+}
+
+// --- Config Editor ---
+
+#[tauri::command]
+pub fn list_configs() -> Result<Vec<String>, String> {
+    let configs = ets_core::find_config_files();
+    Ok(configs
+        .into_iter()
+        .map(|p| p.to_string_lossy().to_string())
+        .collect())
+}
+
+#[tauri::command]
+pub fn load_config(path: String) -> Result<ConfigDocument, String> {
+    let content = std::fs::read_to_string(&path).map_err(|e| e.to_string())?;
+    let doc = ConfigDocument::parse(&content);
+    Ok(doc)
+}
+
+#[tauri::command]
+pub fn save_config(
+    path: String,
+    entries: Vec<ets_save_parser::ConfigEntry>,
+) -> Result<String, String> {
+    let doc = ConfigDocument { entries };
+    let content = doc.to_string();
+    std::fs::write(&path, content).map_err(|e| e.to_string())?;
+    Ok("Config saved".into())
 }
