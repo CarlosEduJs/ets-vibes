@@ -25,6 +25,10 @@ interface SaveInfo {
 interface SaveData {
   money: number | null;
   xp: number | null;
+  level: number | null;
+  trucks_count: number | null;
+  drivers_count: number | null;
+  hq_city: string | null;
   money_account: string | null;
   experience_points: string | null;
   was_compressed: boolean;
@@ -255,11 +259,16 @@ function App() {
 
           {saveData && (
             <div className="mb-6 p-4 bg-zinc-900 rounded border border-zinc-800">
-              <h2 className="text-sm font-semibold mb-3">Save Editor</h2>
-              <div className="mb-3 text-xs text-zinc-400">
+              <h2 className="text-sm font-semibold mb-3">Save Preview</h2>
+              <div className="mb-3 grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-zinc-400">
+                <div>Level: {saveData.level ?? "N/A"}</div>
                 <div>Money: {saveData.money_account ?? "N/A"}</div>
                 <div>XP: {saveData.experience_points ?? "N/A"}</div>
+                <div>Trucks: {saveData.trucks_count ?? "N/A"}</div>
+                <div>Drivers: {saveData.drivers_count ?? "N/A"}</div>
+                <div>HQ: {saveData.hq_city ?? "N/A"}</div>
               </div>
+              <h3 className="text-sm font-semibold mb-3 mt-4">Edit Values</h3>
               <div className="flex flex-wrap gap-3 mb-3">
                 <div>
                   <label className="block text-xs text-zinc-500 mb-1">Money</label>

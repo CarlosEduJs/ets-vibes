@@ -10,9 +10,18 @@ use serde::Serialize;
 pub struct SaveData {
     pub money: Option<i64>,
     pub xp: Option<i64>,
+    pub level: Option<u32>,
+    pub trucks_count: Option<u32>,
+    pub drivers_count: Option<u32>,
+    pub hq_city: Option<String>,
     pub money_account: Option<String>,
     pub experience_points: Option<String>,
     pub was_compressed: bool,
+}
+
+fn calc_level(exp: i64) -> u32 {
+    let exp = exp as f64;
+    ((1.0 + (1.0 + 8.0 * exp / 100.0).sqrt()) / 2.0).floor() as u32
 }
 
 #[derive(Serialize)]
@@ -92,9 +101,25 @@ pub fn load_save(game_sii_path: String) -> Result<SaveData, String> {
         .as_ref()
         .and_then(|s| s.parse::<i64>().ok());
 
+    let computed_level = xp.map(calc_level);
+
+    let trucks_count = doc
+        .get_property("trucks")
+        .and_then(|s| s.parse::<u32>().ok());
+
+    let drivers_count = doc
+        .get_property("drivers")
+        .and_then(|s| s.parse::<u32>().ok());
+
+    let hq_city = doc.get_property("hq_city").map(|s| s.to_string());
+
     Ok(SaveData {
         money,
         xp,
+        level: computed_level,
+        trucks_count,
+        drivers_count,
+        hq_city,
         money_account,
         experience_points,
         was_compressed,
