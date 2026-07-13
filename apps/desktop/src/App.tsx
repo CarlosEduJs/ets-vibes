@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { Button } from "ui";
 import * as v from "valibot";
 
 function formatKeyName(key: string): string {
@@ -379,14 +380,14 @@ function App() {
 
       {/* Read-Only Toggle */}
       <div className="flex items-center gap-2 mb-4 text-sm">
-        <button
+        <Button
           onClick={() => setReadOnly(!readOnly)}
           className={`px-3 py-1 rounded text-xs font-medium ${
             readOnly ? "bg-yellow-800 text-yellow-200" : "bg-green-800 text-green-200"
           }`}
         >
           {readOnly ? "🔒 Read Only" : "✏️ Editing Enabled"}
-        </button>
+        </Button>
         <span className="text-zinc-600 text-xs">
           {readOnly ? "Enable to make changes" : "All edits will modify files"}
         </span>
@@ -410,7 +411,7 @@ function App() {
 
       {tab === "saves" && (
         <>
-          <button onClick={loadProfiles} className="mb-4 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 rounded text-sm">
+          <button onClick={loadProfiles} className="mb-4 px-4 py-2 hover:bg-zinc-700 rounded text-sm">
             Load Profiles
           </button>
 
