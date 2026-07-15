@@ -40,13 +40,16 @@
     "vite": "npm:@voidzero-dev/vite-plus-core@0.2.2"
   },
   "lint-staged": {
-    "*": [
+    "*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}": [
       "oxlint",
+      "oxfmt --write"
+    ],
+    "*.{json,md,yaml,yml,toml}": [
       "oxfmt --write"
     ],
     "*.rs": [
       "cargo fmt -- --check",
-      "cargo clippy -- -D warnings"
+      "bash -c 'cargo clippy --workspace --all-targets -- -D warnings'"
     ]
   },
   "packageManager": "pnpm@11.11.0"
