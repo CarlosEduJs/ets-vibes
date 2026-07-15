@@ -112,7 +112,7 @@ export function ConfigEditorPage({ readOnly, onStatusChange }: ConfigEditorPageP
     }) ?? [];
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 h-full overflow-y-auto">
       <div className="flex items-center gap-3">
         <Button variant="outline" size="sm" onClick={loadConfigs}>
           Find Configs

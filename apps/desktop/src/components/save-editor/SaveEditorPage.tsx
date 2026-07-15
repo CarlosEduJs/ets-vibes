@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { Button } from "ui";
+import { Button, ScrollArea, ScrollBar } from "ui";
 import type { ProfileInfo, SaveInfo, SaveData, EditResult, SaveEditorView } from "../../types";
 import { BreadcrumbNav } from "./BreadcrumbNav";
 import { ProfileGrid } from "./ProfileGrid";
@@ -263,7 +263,7 @@ export function SaveEditorPage({ readOnly, onStatusChange }: SaveEditorPageProps
 
   // --- Render ---
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 h-full overflow-y-auto" >
       <BreadcrumbNav
         profileName={view.level !== "profiles" ? view.profile.display_name : undefined}
         saveName={view.level === "detail" ? view.save.save_name : undefined}
@@ -282,7 +282,7 @@ export function SaveEditorPage({ readOnly, onStatusChange }: SaveEditorPageProps
 
       {view.level === "saves" && (
         <div>
-          <div className="mb-4">
+          <div className="mb-4 flex justify-end">
             <Button
               variant="destructive"
               size="sm"
@@ -291,9 +291,6 @@ export function SaveEditorPage({ readOnly, onStatusChange }: SaveEditorPageProps
             >
               Delete Profile
             </Button>
-            <span className="ml-2 text-xs text-muted-foreground">
-              Profile name is set by the game and cannot be renamed
-            </span>
           </div>
           <SaveList saves={saves} selectedSave={null} onSelectSave={selectSave} />
         </div>
