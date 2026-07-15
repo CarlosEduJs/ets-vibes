@@ -19,7 +19,8 @@
     "cargo:fmt": "cargo fmt --all --check",
     "cargo:clippy": "cargo clippy --workspace --all-targets -- -D warnings",
     "cargo:build": "cargo build --workspace",
-    "tauri": "pnpm --filter @ets-vibes/desktop tauri"
+    "tauri": "pnpm --filter @ets-vibes/desktop tauri",
+    "prepush": "pnpm --filter @ets-vibes/desktop check-types && cargo clippy --workspace --all-targets -- -D warnings && cargo fmt --all --check"
   },
   "dependencies": {
     "dotenv": "^17.4.2",
