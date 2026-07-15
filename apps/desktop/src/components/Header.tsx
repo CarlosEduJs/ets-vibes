@@ -1,5 +1,4 @@
-import { Switch } from "ui";
-import { FieldLabel } from "ui";
+import { FieldLabel, Switch } from "ui";
 import { TabBar } from "./TabBar";
 
 interface HeaderProps {

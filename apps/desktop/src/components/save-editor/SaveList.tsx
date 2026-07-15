@@ -16,6 +16,8 @@ export function SaveList({ saves, selectedSave, onSelectSave }: SaveListProps) {
       {saves.map((s) => (
         <button
           key={s.game_sii_path}
+          type="button"
+          aria-label={`Select save ${s.save_name}`}
           onClick={() => onSelectSave(s.game_sii_path)}
           className={`w-full rounded-lg border px-4 py-3 text-left transition-colors ${
             selectedSave === s.game_sii_path

@@ -3,8 +3,10 @@ use std::sync::LazyLock;
 
 use crate::save_parser::error::SaveError;
 
+#[allow(clippy::expect_used)]
 static PROPERTY_RE: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"(?m)^\s*(?P<name>\w+(?:\[\d+\])?)\s*:\s*(?P<value>.+?)\s*$").unwrap()
+    Regex::new(r"(?m)^\s*(?P<name>\w+(?:\[\d+\])?)\s*:\s*(?P<value>.+?)\s*$")
+        .expect("invalid regex pattern")
 });
 
 pub struct SiiDocument {
@@ -71,10 +73,13 @@ impl SiiDocument {
             changed = true;
         }
 
-        let last_prop_line = PROPERTY_RE.captures_iter(&self.content).last().map(|c| {
-            let m = c.get(0).unwrap();
-            (m.start(), m.end())
-        });
+        let last_prop_line = PROPERTY_RE
+            .captures_iter(&self.content)
+            .last()
+            .and_then(|c| {
+                let m = c.get(0)?;
+                Some((m.start(), m.end()))
+            });
 
         for (i, value) in values.iter().enumerate() {
             let indexed_name = format!("{}[{}]", property_name, i);

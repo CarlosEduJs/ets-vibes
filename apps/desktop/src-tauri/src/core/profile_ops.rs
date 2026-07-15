@@ -23,7 +23,9 @@ fn update_info_sii_name(save_path: &Path, new_name: &str) -> Result<(), CoreErro
     for line in &mut lines {
         let trimmed = line.trim();
         if trimmed.starts_with("name:") || trimmed.starts_with("name :") {
-            let colon_pos = trimmed.find(':').unwrap();
+            let Some(colon_pos) = trimmed.find(':') else {
+                continue;
+            };
             // Build new line keeping spacing: "  name: " + new_name
             let prefix = &line[..line.find(trimmed).unwrap_or(0) + colon_pos + 1];
             *line = format!("{} \"{}\"", prefix, new_name);

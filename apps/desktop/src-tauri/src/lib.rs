@@ -6,7 +6,7 @@ mod save_parser;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    let builder = tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             commands::profile::list_profiles,
@@ -24,7 +24,10 @@ pub fn run() {
             commands::config::list_configs,
             commands::config::load_config,
             commands::config::save_config,
-        ])
+        ]);
+
+    #[allow(clippy::expect_used)]
+    builder
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

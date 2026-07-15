@@ -50,13 +50,17 @@ export function SaveEditorPage({ readOnly, onStatusChange }: SaveEditorPageProps
     async (path: string) => {
       onStatusChange("Loading saves...");
       try {
-        const saves = await invoke<SaveInfo[]>("get_saves", {
+        const fetchedSaves = await invoke<SaveInfo[]>("get_saves", {
           profilePath: path,
         });
         const profile = profiles.find((p) => p.path === path);
-        setSaves(saves);
-        setView({ level: "saves", profile: profile! });
-        onStatusChange(`Found ${saves.length} saves`);
+        if (!profile) {
+          onStatusChange("Profile not found");
+          return;
+        }
+        setSaves(fetchedSaves);
+        setView({ level: "saves", profile });
+        onStatusChange(`Found ${fetchedSaves.length} saves`);
       } catch (e) {
         onStatusChange(`Error: ${e}`);
       }
@@ -75,7 +79,9 @@ export function SaveEditorPage({ readOnly, onStatusChange }: SaveEditorPageProps
         setXpInput(data.experience_points ?? "");
         if (view.level === "saves") {
           const save = saves.find((s) => s.game_sii_path === gameSiiPath);
-          setView({ level: "detail", profile: view.profile, save: save! });
+          if (save) {
+            setView({ level: "detail", profile: view.profile, save });
+          }
         }
         onStatusChange(`Save loaded${data.was_compressed ? " (was compressed)" : " (plaintext)"}`);
       } catch (e) {
@@ -175,10 +181,10 @@ export function SaveEditorPage({ readOnly, onStatusChange }: SaveEditorPageProps
         });
         onStatusChange(result.message);
         if (view.profile) {
-          const saves = await invoke<SaveInfo[]>("get_saves", {
+          const fetchedSaves = await invoke<SaveInfo[]>("get_saves", {
             profilePath: view.profile.path,
           });
-          setSaves(saves);
+          setSaves(fetchedSaves);
         }
         setView({ level: "saves", profile: view.profile });
         setSaveData(null);
@@ -200,10 +206,10 @@ export function SaveEditorPage({ readOnly, onStatusChange }: SaveEditorPageProps
         });
         onStatusChange(result.message);
         if (view.profile) {
-          const saves = await invoke<SaveInfo[]>("get_saves", {
+          const fetchedSaves = await invoke<SaveInfo[]>("get_saves", {
             profilePath: view.profile.path,
           });
-          setSaves(saves);
+          setSaves(fetchedSaves);
         }
       } catch (e) {
         onStatusChange(`Error: ${e}`);
@@ -214,6 +220,7 @@ export function SaveEditorPage({ readOnly, onStatusChange }: SaveEditorPageProps
 
   const handleDelete = useCallback(async () => {
     if (view.level !== "detail") return;
+    // eslint-disable-next-line no-alert
     if (!confirm("Are you sure you want to delete this save? A backup will be created.")) return;
     onStatusChange("Deleting save...");
     try {
@@ -222,10 +229,10 @@ export function SaveEditorPage({ readOnly, onStatusChange }: SaveEditorPageProps
       });
       onStatusChange(result.message);
       if (view.profile) {
-        const saves = await invoke<SaveInfo[]>("get_saves", {
+        const fetchedSaves = await invoke<SaveInfo[]>("get_saves", {
           profilePath: view.profile.path,
         });
-        setSaves(saves);
+        setSaves(fetchedSaves);
       }
       setView({ level: "saves", profile: view.profile });
       setSaveData(null);
@@ -237,6 +244,7 @@ export function SaveEditorPage({ readOnly, onStatusChange }: SaveEditorPageProps
   const handleProfileDelete = useCallback(async () => {
     if (view.level !== "saves" && view.level !== "detail") return;
     const profile = view.level === "saves" ? view.profile : view.profile;
+    // eslint-disable-next-line no-alert
     if (!confirm("Are you sure you want to delete this profile? A backup will be created.")) return;
     onStatusChange("Deleting profile...");
     try {

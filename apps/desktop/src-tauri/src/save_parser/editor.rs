@@ -60,7 +60,7 @@ fn parse_hex_float(s: &str) -> Option<f64> {
     }
     let hex_str = trimmed.strip_prefix('&')?;
     let bits = u32::from_str_radix(hex_str, 16).ok()?;
-    Some(f32::from_bits(bits) as f64)
+    Some(f64::from(f32::from_bits(bits)))
 }
 
 fn extract_property<'a>(content: &'a str, name: &str) -> Option<&'a str> {

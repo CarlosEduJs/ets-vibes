@@ -1,11 +1,74 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["typescript", "unicorn", "oxc"],
+  "plugins": ["typescript", "unicorn", "oxc", "react", "jsx-a11y", "import"],
   "categories": {
-    "correctness": "error"
+    "correctness": "error",
+    "suspicious": "warn",
+    "perf": "warn"
   },
-  "rules": {},
+  "rules": {
+    "no-console": "warn",
+    "no-shadow": "warn",
+    "no-debugger": "error",
+    "no-alert": "warn",
+    "eqeqeq": ["error", "smart"],
+
+    "typescript/no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
+    "typescript/consistent-type-imports": [
+      "warn",
+      { "prefer": "type-imports", "disallowTypeAnnotations": false }
+    ],
+    "typescript/no-explicit-any": "warn",
+    "typescript/no-shadow": "warn",
+    "typescript/ban-ts-comment": ["warn", { "minimumDescriptionLength": 10 }],
+    "typescript/prefer-ts-expect-error": "warn",
+    "typescript/no-non-null-assertion": "warn",
+    "typescript/array-type": ["warn", { "default": "array-simple" }],
+    "typescript/consistent-type-definitions": "off",
+    "typescript/prefer-as-const": "warn",
+    "typescript/consistent-generic-constructors": "warn",
+
+    "react/jsx-key": "error",
+    "react/jsx-no-duplicate-props": "error",
+    "react/no-children-prop": "error",
+    "react/no-direct-mutation-state": "error",
+    "react/react-in-jsx-scope": "off",
+    "react/jsx-pascal-case": "warn",
+    "react/jsx-no-target-blank": "warn",
+    "react/no-unknown-property": "warn",
+    "react/button-has-type": "warn",
+    "react/jsx-curly-brace-presence": ["warn", { "props": "never", "children": "never" }],
+    "react/jsx-boolean-value": ["warn", "never"],
+    "react/jsx-fragments": ["warn", "syntax"],
+    "react/hook-use-state": "warn",
+    "react/self-closing-comp": "warn",
+
+    "unicorn/catch-error-name": ["warn", { "name": "e" }],
+    "unicorn/error-message": "error",
+    "unicorn/no-instanceof-array": "error",
+    "unicorn/prefer-string-starts-ends-with": "warn",
+    "unicorn/explicit-length-check": "warn",
+    "unicorn/prefer-ternary": "warn",
+    "unicorn/throw-new-error": "error",
+    "unicorn/no-useless-spread": "warn",
+    "unicorn/prefer-optional-catch-binding": "warn",
+
+    "jsx-a11y/alt-text": "warn",
+    "jsx-a11y/anchor-has-content": "warn",
+    "jsx-a11y/aria-props": "warn",
+    "jsx-a11y/aria-role": "warn",
+    "jsx-a11y/click-events-have-key-events": "off",
+    "jsx-a11y/no-static-element-interactions": "off",
+
+    "import/no-unassigned-import": "off",
+    "import/no-duplicates": ["warn"],
+    "import/first": "warn",
+    "import/no-self-import": "error"
+  },
+  "ignorePatterns": ["packages/ui/**"],
   "env": {
-    "builtin": true
+    "builtin": true,
+    "browser": true,
+    "node": true
   }
 }

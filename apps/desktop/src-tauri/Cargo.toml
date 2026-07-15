@@ -8,6 +8,52 @@ description = "ETS Vibes - Desktop application"
 name = "ets_vibes_lib"
 crate-type = ["lib", "cdylib", "staticlib"]
 
+[lints.rust]
+unsafe_code = "deny"
+dead_code = "warn"
+
+[lints.clippy]
+# Restriction - prevent panics and debug leftovers
+unwrap_used = "warn"
+expect_used = "warn"
+todo = "warn"
+dbg_macro = "warn"
+print_stdout = "warn"
+print_stderr = "warn"
+
+# Style
+use_self = "warn"
+needless_return = "warn"
+redundant_closure = "warn"
+single_match = "warn"
+bool_to_int_with_if = "warn"
+map_unwrap_or = "warn"
+redundant_else = "warn"
+unnecessary_join = "warn"
+match_same_arms = "warn"
+
+# Correctness
+cast_lossless = "warn"
+large_enum_variant = "warn"
+result_large_err = "warn"
+wildcard_enum_match_arm = "warn"
+manual_assert = "warn"
+
+# Noisy ones - allow explicitly
+similar_names = "allow"
+module_name_repetitions = "allow"
+too_many_arguments = "allow"
+too_many_lines = "allow"
+type_complexity = "allow"
+cast_possible_truncation = "allow"
+cast_sign_loss = "allow"
+cast_possible_wrap = "allow"
+doc_markdown = "allow"
+must_use_candidate = "allow"
+return_self_not_must_use = "allow"
+missing_errors_doc = "allow"
+missing_panics_doc = "allow"
+
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 

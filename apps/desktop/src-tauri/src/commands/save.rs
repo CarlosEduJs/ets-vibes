@@ -125,10 +125,10 @@ pub fn edit_save(
         Some(bp.to_string_lossy().to_string())
     };
 
-    let message = backup
-        .as_ref()
-        .map(|b| format!("Saved (backup: {})", b))
-        .unwrap_or_else(|| "No changes made.".into());
+    let message = backup.as_ref().map_or_else(
+        || "No changes made.".into(),
+        |b| format!("Saved (backup: {})", b),
+    );
 
     Ok(EditResult { message, backup })
 }
