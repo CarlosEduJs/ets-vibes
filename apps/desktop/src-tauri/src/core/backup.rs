@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 
 use chrono::Local;
 
-use crate::CoreError;
+use crate::core::error::CoreError;
 
 pub fn backup_file(source: &Path) -> Result<PathBuf, CoreError> {
     let source_dir = source

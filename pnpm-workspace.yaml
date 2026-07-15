@@ -2,6 +2,15 @@ packages:
   - "apps/*"
   - "packages/*"
 
+catalog:
+  react: ^19.1.0
+  react-dom: ^19.1.0
+  lucide-react: ^1.24.0
+  tailwindcss: ^4
+  "@types/react": ^19.1.0
+  "@types/react-dom": ^19.1.0
+  typescript: ^7.0.2
+
 # pnpm 11 blocks dependency lifecycle scripts unless they are approved here.
 # Entries are scoped to packages this generated stack can pull in.
 allowBuilds:

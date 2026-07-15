@@ -1016,45 +1016,27 @@ dependencies = [
 ]
 
 [[package]]
-name = "ets-core"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "chrono",
- "dirs",
- "hex",
- "serde",
- "thiserror 2.0.18",
-]
-
-[[package]]
-name = "ets-save-parser"
-version = "0.1.0"
-dependencies = [
- "aes",
- "cbc",
- "cipher",
- "ets-core",
- "flate2",
- "getrandom 0.2.17",
- "hmac",
- "regex",
- "serde",
- "sha2 0.11.0",
- "thiserror 2.0.18",
-]
-
-[[package]]
 name = "ets-vibes"
 version = "0.1.0"
 dependencies = [
- "ets-core",
- "ets-save-parser",
+ "aes",
+ "anyhow",
+ "cbc",
+ "chrono",
+ "cipher",
+ "dirs",
+ "flate2",
+ "getrandom 0.2.17",
+ "hex",
+ "hmac",
+ "regex",
  "serde",
  "serde_json",
+ "sha2 0.11.0",
  "tauri",
  "tauri-build",
  "tauri-plugin-opener",
+ "thiserror 2.0.18",
 ]
 
 [[package]]

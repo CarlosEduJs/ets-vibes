@@ -1,7 +1,7 @@
 use regex::Regex;
 use std::sync::LazyLock;
 
-use crate::error::SaveError;
+use crate::save_parser::error::SaveError;
 
 static PROPERTY_RE: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r"(?m)^\s*(?P<name>\w+(?:\[\d+\])?)\s*:\s*(?P<value>.+?)\s*$").unwrap()

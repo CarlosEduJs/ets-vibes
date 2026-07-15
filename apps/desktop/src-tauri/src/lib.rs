@@ -1,25 +1,29 @@
+#![allow(dead_code)]
+
 mod commands;
+mod core;
+mod save_parser;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
-            commands::list_profiles,
-            commands::get_saves,
-            commands::load_save,
-            commands::edit_save,
-            commands::unlock_cities,
-            commands::max_skills,
-            commands::repair_all,
-            commands::refuel_all,
-            commands::list_configs,
-            commands::load_config,
-            commands::save_config,
-            commands::rename_save,
-            commands::clone_save,
-            commands::delete_save,
-            commands::delete_profile,
+            commands::profile::list_profiles,
+            commands::profile::get_saves,
+            commands::profile::delete_profile,
+            commands::save::load_save,
+            commands::save::edit_save,
+            commands::save::unlock_cities,
+            commands::save::max_skills,
+            commands::save::repair_all,
+            commands::save::refuel_all,
+            commands::manage::rename_save,
+            commands::manage::clone_save,
+            commands::manage::delete_save,
+            commands::config::list_configs,
+            commands::config::load_config,
+            commands::config::save_config,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

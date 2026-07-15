@@ -21,26 +21,26 @@
 ## Core Features (MVP - v1.0):
 
 - Gerenciador de Perfis e Saves
-    - Detecção automática de pastas (Steam + Local).
-    - Listagem de perfis com preview (nome, level, dinheiro, km rodados, caminhão atual, etc).
-    - Renomear, clonar, deletar e criar backup automático.
+  - Detecção automática de pastas (Steam + Local).
+  - Listagem de perfis com preview (nome, level, dinheiro, km rodados, caminhão atual, etc).
+  - Renomear, clonar, deletar e criar backup automático.
 
 - Editor de Configurações do Jogo
-    - Editor de configurações do jogo (config.cfg) com validação de valores.
-    - Categorias: Graphics, Performance, Sound, Input, Multimon, Developer.
-    - Presets prontos (Performance, Realismo, Ultra Graphics, Low-end, etc).
-    - Busca e filtro de opções.
+  - Editor de configurações do jogo (config.cfg) com validação de valores.
+  - Categorias: Graphics, Performance, Sound, Input, Multimon, Developer.
+  - Presets prontos (Performance, Realismo, Ultra Graphics, Low-end, etc).
+  - Busca e filtro de opções.
 
 - Editor de Saves
-    - Editar Dinheiro (Empresa e Motorista), XP, Level, Pontos de Habilidade, Caminhões, Garagens, Contratos, etc.
-    - Reparar / Reabastecer Truck e Trailer.
-    - Desbloquear cidades visitadas.
-    - Visualizar e editar dados básicos de trucks/trailers (placa, odômetro, etc).
+  - Editar Dinheiro (Empresa e Motorista), XP, Level, Pontos de Habilidade, Caminhões, Garagens, Contratos, etc.
+  - Reparar / Reabastecer Truck e Trailer.
+  - Desbloquear cidades visitadas.
+  - Visualizar e editar dados básicos de trucks/trailers (placa, odômetro, etc).
 
 - Segurança
-    - Backup automático antes de quaisquer alterações.
-    - Modo Read-Only por padrão, com opção de habilitar edição.
-    - Logs de alterações feitas no save, com opção de desfazer alterações.
+  - Backup automático antes de quaisquer alterações.
+  - Modo Read-Only por padrão, com opção de habilitar edição.
+  - Logs de alterações feitas no save, com opção de desfazer alterações.
 
 ## Features PÓS-MVP (v2.0):
 
@@ -56,7 +56,6 @@
 
 - Suporte ao ATS.
 - Modo "God Mode" com presets rápidos (dinheiro infinito, XP infinito, desbloqueio de todas as cidades, etc).
-
 
 ## Princípios
 

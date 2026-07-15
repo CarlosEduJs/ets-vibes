@@ -5,24 +5,27 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
+    "check-types": "tsc --noEmit",
     "preview": "vite preview",
     "tauri": "tauri"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.11.0",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0",
+    "lucide-react": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "shadcn": "^4.13.0",
     "ui": "workspace:*",
     "valibot": "^1.4.2"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.1.0",
     "@tauri-apps/cli": "^2.11.0",
-    "@types/react": "^19.1.0",
-    "@types/react-dom": "^19.1.0",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
     "@vitejs/plugin-react": "^4.4.0",
-    "tailwindcss": "^4.1.0",
-    "typescript": "^7.0.2",
+    "tailwindcss": "catalog:",
+    "typescript": "catalog:",
     "vite": "^6.3.0"
   }
 }

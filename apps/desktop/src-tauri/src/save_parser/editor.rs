@@ -1,8 +1,9 @@
-use ets_core::{SaveFile, TruckInfo};
+use crate::core::models::TruckInfo;
+use crate::core::profile::SaveFile;
 
-use crate::compression::{compress_save, decompress_save};
-use crate::error::SaveError;
-use crate::sii::SiiDocument;
+use crate::save_parser::compression::{compress_save, decompress_save};
+use crate::save_parser::error::SaveError;
+use crate::save_parser::sii::SiiDocument;
 
 pub fn get_trucks_info(content: &str) -> Vec<TruckInfo> {
     // Get truck references from the player section
@@ -25,19 +26,18 @@ pub fn get_trucks_info(content: &str) -> Vec<TruckInfo> {
 
         let license_plate = extract_property(section_content, "license_plate")
             .map(|s| s.trim_matches('"').to_string());
-        let odometer_km = extract_property(section_content, "odometer")
-            .and_then(|v| v.parse::<f64>().ok());
-        let fuel_relative = extract_property(section_content, "fuel_relative")
-            .and_then(parse_hex_float);
+        let odometer_km =
+            extract_property(section_content, "odometer").and_then(|v| v.parse::<f64>().ok());
+        let fuel_relative =
+            extract_property(section_content, "fuel_relative").and_then(parse_hex_float);
 
-        let engine_wear = extract_property(section_content, "engine_wear")
-            .and_then(parse_hex_float);
-        let transmission_wear = extract_property(section_content, "transmission_wear")
-            .and_then(parse_hex_float);
-        let cabin_wear = extract_property(section_content, "cabin_wear")
-            .and_then(parse_hex_float);
-        let chassis_wear = extract_property(section_content, "chassis_wear")
-            .and_then(parse_hex_float);
+        let engine_wear =
+            extract_property(section_content, "engine_wear").and_then(parse_hex_float);
+        let transmission_wear =
+            extract_property(section_content, "transmission_wear").and_then(parse_hex_float);
+        let cabin_wear = extract_property(section_content, "cabin_wear").and_then(parse_hex_float);
+        let chassis_wear =
+            extract_property(section_content, "chassis_wear").and_then(parse_hex_float);
 
         trucks.push(TruckInfo {
             index: i,

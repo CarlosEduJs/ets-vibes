@@ -1,11 +1,14 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use crate::{backup_file, CoreError};
+use crate::core::backup::backup_file;
+use crate::core::error::CoreError;
 
 fn is_valid_save_name(name: &str) -> bool {
     !name.is_empty()
-        && name.chars().all(|c| c.is_alphanumeric() || c == '_' || c == '-')
+        && name
+            .chars()
+            .all(|c| c.is_alphanumeric() || c == '_' || c == '-')
 }
 
 fn update_info_sii_name(save_path: &Path, new_name: &str) -> Result<(), CoreError> {

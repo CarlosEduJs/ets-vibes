@@ -7,9 +7,9 @@
   ],
   "type": "module",
   "scripts": {
-    "dev": "vp run -r dev",
-    "build": "vp run -r build",
-    "check-types": "vp run -r check-types",
+    "dev": "pnpm --filter @ets-vibes/desktop dev",
+    "build": "pnpm --filter @ets-vibes/desktop build",
+    "check-types": "pnpm --filter @ets-vibes/desktop check-types",
     "check": "oxlint && oxfmt --write",
     "lint": "vp lint",
     "format": "vp fmt",
@@ -18,7 +18,8 @@
     "cargo:check": "cargo check --workspace",
     "cargo:fmt": "cargo fmt --all --check",
     "cargo:clippy": "cargo clippy --workspace --all-targets -- -D warnings",
-    "cargo:build": "cargo build --workspace"
+    "cargo:build": "cargo build --workspace",
+    "tauri": "pnpm --filter @ets-vibes/desktop tauri"
   },
   "dependencies": {
     "dotenv": "^17.4.2",

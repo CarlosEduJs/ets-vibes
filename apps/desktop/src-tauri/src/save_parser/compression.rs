@@ -12,7 +12,7 @@ use getrandom::getrandom;
 use hmac::{digest::KeyInit as HmacKeyInit, Hmac, Mac};
 use sha2::Sha256;
 
-use crate::error::SaveError;
+use crate::save_parser::error::SaveError;
 
 type Aes256CbcDec = Decryptor<Aes256>;
 type Aes256CbcEnc = Encryptor<Aes256>;

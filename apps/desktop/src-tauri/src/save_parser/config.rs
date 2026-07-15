@@ -1,4 +1,4 @@
-use ets_core::config_category::{categorize, ConfigCategory};
+use crate::core::config_category::{categorize, ConfigCategory};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -21,7 +21,10 @@ impl ConfigValueType {
             }
         } else if value.parse::<f64>().is_ok() {
             Self::Float
-        } else if matches!(value, "true" | "false" | "True" | "False" | "TRUE" | "FALSE") {
+        } else if matches!(
+            value,
+            "true" | "false" | "True" | "False" | "TRUE" | "FALSE"
+        ) {
             Self::Bool
         } else {
             Self::String
@@ -39,10 +42,16 @@ impl ConfigValueType {
                 Err(_) => Err(format!("Expected number, got '{}'", value)),
             },
             Self::Bool => {
-                if matches!(value, "0" | "1" | "true" | "false" | "True" | "False" | "TRUE" | "FALSE") {
+                if matches!(
+                    value,
+                    "0" | "1" | "true" | "false" | "True" | "False" | "TRUE" | "FALSE"
+                ) {
                     Ok(())
                 } else {
-                    Err(format!("Expected boolean (0/1/true/false), got '{}'", value))
+                    Err(format!(
+                        "Expected boolean (0/1/true/false), got '{}'",
+                        value
+                    ))
                 }
             }
             Self::String => Ok(()),
