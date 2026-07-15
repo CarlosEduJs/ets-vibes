@@ -20,7 +20,7 @@
     "cargo:clippy": "cargo clippy --workspace --all-targets -- -D warnings",
     "cargo:build": "cargo build --workspace",
     "tauri": "pnpm --filter @ets-vibes/desktop tauri",
-    "prepush": "pnpm --filter @ets-vibes/desktop check-types && cargo clippy --workspace --all-targets -- -D warnings && cargo fmt --all --check"
+    "prepush": "pnpm --filter @ets-vibes/desktop check-types && cargo clippy --workspace --all-targets -- -D warnings && cargo fmt --all --check && cargo test --workspace --all-targets --all-features --locked"
   },
   "dependencies": {
     "dotenv": "^17.4.2",
@@ -38,19 +38,6 @@
   },
   "overrides": {
     "vite": "npm:@voidzero-dev/vite-plus-core@0.2.2"
-  },
-  "lint-staged": {
-    "*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}": [
-      "oxlint",
-      "oxfmt --write"
-    ],
-    "*.{json,md,yaml,yml,toml}": [
-      "oxfmt --write"
-    ],
-    "*.rs": [
-      "cargo fmt -- --check",
-      "bash -c 'cargo clippy --workspace --all-targets -- -D warnings'"
-    ]
   },
   "packageManager": "pnpm@11.11.0"
 }
