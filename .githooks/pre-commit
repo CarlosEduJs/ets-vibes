@@ -1,0 +1,2 @@
+#!/usr/bin/env sh
+cargo check --workspace --all-targets --all-features --locked --tests

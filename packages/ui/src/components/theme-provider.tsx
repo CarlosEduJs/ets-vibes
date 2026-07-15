@@ -16,7 +16,7 @@ type ThemeProviderState = {
 };
 
 const COLOR_SCHEME_QUERY = "(prefers-color-scheme: dark)";
-const THEME_VALUES: Theme[] = new Set(["dark", "light", "system"]);
+const THEME_VALUES = new Set<Theme>(["dark", "light", "system"]);
 
 const ThemeProviderContext = React.createContext<ThemeProviderState | undefined>(undefined);
 
