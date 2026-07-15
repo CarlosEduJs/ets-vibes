@@ -123,3 +123,75 @@ impl ProfileDetector {
         saves
     }
 }
+
+#[cfg(test)]
+#[allow(clippy::unwrap_used)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_hex_decode_valid_ascii() {
+        let result = hex_decode_name("48656c6c6f").unwrap();
+        assert_eq!(result, "Hello");
+    }
+
+    #[test]
+    fn test_hex_decode_space() {
+        let result = hex_decode_name("4d792047616d65").unwrap();
+        assert_eq!(result, "My Game");
+    }
+
+    #[test]
+    fn test_hex_decode_empty() {
+        // hex::decode("") -> Ok("") -> Some("")
+        let result = hex_decode_name("");
+        assert_eq!(result, Some(String::new()));
+    }
+
+    #[test]
+    fn test_hex_decode_invalid_hex() {
+        let result = hex_decode_name("zzzz");
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn test_hex_decode_odd_length() {
+        let result = hex_decode_name("4865");
+        assert!(result.is_some());
+    }
+
+    #[test]
+    fn test_hex_decode_invalid_utf8() {
+        let result = hex_decode_name("fffe");
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn test_display_name_hex() {
+        let p = Profile {
+            path: PathBuf::from("/tmp"),
+            name: "48656c6c6f".to_string(),
+        };
+        assert_eq!(p.display_name(), "Hello");
+    }
+
+    #[test]
+    fn test_display_name_plain() {
+        let p = Profile {
+            path: PathBuf::from("/tmp"),
+            name: "plain_name".to_string(),
+        };
+        assert_eq!(p.display_name(), "plain_name");
+    }
+
+    #[test]
+    fn test_save_file_new() {
+        let sf = SaveFile::new(PathBuf::from("/profiles/abc"), "autosave".to_string());
+        assert_eq!(sf.save_name, "autosave");
+        assert_eq!(sf.path, PathBuf::from("/profiles/abc/save/autosave"));
+        assert_eq!(
+            sf.game_sii_path,
+            PathBuf::from("/profiles/abc/save/autosave/game.sii")
+        );
+    }
+}

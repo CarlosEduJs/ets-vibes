@@ -149,3 +149,263 @@ impl std::fmt::Display for ConfigDocument {
         Ok(())
     }
 }
+
+#[cfg(test)]
+#[allow(clippy::unwrap_used)]
+mod tests {
+    use super::*;
+
+    // --- ConfigValueType::infer_from_value ---
+
+    #[test]
+    fn test_infer_int() {
+        assert_eq!(
+            ConfigValueType::infer_from_value("42"),
+            ConfigValueType::Int
+        );
+        assert_eq!(
+            ConfigValueType::infer_from_value("-1"),
+            ConfigValueType::Int
+        );
+        assert_eq!(ConfigValueType::infer_from_value("0"), ConfigValueType::Int);
+    }
+
+    #[test]
+    fn test_infer_float() {
+        assert_eq!(
+            ConfigValueType::infer_from_value("3.14"),
+            ConfigValueType::Float
+        );
+        assert_eq!(
+            ConfigValueType::infer_from_value("-0.5"),
+            ConfigValueType::Float
+        );
+    }
+
+    #[test]
+    fn test_infer_bool() {
+        assert_eq!(
+            ConfigValueType::infer_from_value("true"),
+            ConfigValueType::Bool
+        );
+        assert_eq!(
+            ConfigValueType::infer_from_value("false"),
+            ConfigValueType::Bool
+        );
+        assert_eq!(
+            ConfigValueType::infer_from_value("True"),
+            ConfigValueType::Bool
+        );
+        assert_eq!(
+            ConfigValueType::infer_from_value("FALSE"),
+            ConfigValueType::Bool
+        );
+    }
+
+    #[test]
+    fn test_infer_string() {
+        assert_eq!(
+            ConfigValueType::infer_from_value("hello"),
+            ConfigValueType::String
+        );
+        assert_eq!(
+            ConfigValueType::infer_from_value(""),
+            ConfigValueType::String
+        );
+        assert_eq!(
+            ConfigValueType::infer_from_value("r_scale"),
+            ConfigValueType::String
+        );
+    }
+
+    // --- ConfigValueType::validate ---
+
+    #[test]
+    fn test_validate_int_ok() {
+        assert!(ConfigValueType::Int.validate("42").is_ok());
+        assert!(ConfigValueType::Int.validate("-1").is_ok());
+        assert!(ConfigValueType::Int.validate("0").is_ok());
+    }
+
+    #[test]
+    fn test_validate_int_err() {
+        assert!(ConfigValueType::Int.validate("3.14").is_err());
+        assert!(ConfigValueType::Int.validate("abc").is_err());
+    }
+
+    #[test]
+    fn test_validate_float_ok() {
+        assert!(ConfigValueType::Float.validate("3.14").is_ok());
+        assert!(ConfigValueType::Float.validate("-1.5").is_ok());
+    }
+
+    #[test]
+    fn test_validate_float_err() {
+        assert!(ConfigValueType::Float.validate("abc").is_err());
+    }
+
+    #[test]
+    fn test_validate_bool_ok() {
+        assert!(ConfigValueType::Bool.validate("true").is_ok());
+        assert!(ConfigValueType::Bool.validate("false").is_ok());
+        assert!(ConfigValueType::Bool.validate("0").is_ok());
+        assert!(ConfigValueType::Bool.validate("1").is_ok());
+        assert!(ConfigValueType::Bool.validate("True").is_ok());
+        assert!(ConfigValueType::Bool.validate("FALSE").is_ok());
+    }
+
+    #[test]
+    fn test_validate_bool_err() {
+        assert!(ConfigValueType::Bool.validate("yes").is_err());
+        assert!(ConfigValueType::Bool.validate("2").is_err());
+    }
+
+    #[test]
+    fn test_validate_string() {
+        assert!(ConfigValueType::String.validate("anything").is_ok());
+        assert!(ConfigValueType::String.validate("").is_ok());
+    }
+
+    // --- ConfigDocument::parse ---
+
+    #[test]
+    fn test_parse_simple() {
+        let text = "uset r_scale \"1.0\"\nuset g_traffic \"1\"\n";
+        let doc = ConfigDocument::parse(text);
+        assert_eq!(doc.entries.len(), 2);
+    }
+
+    #[test]
+    fn test_parse_skips_empty_and_comments() {
+        let text = "# comment\nuset r_scale \"1.0\"\n\nuset g_traffic \"1\"\n";
+        let doc = ConfigDocument::parse(text);
+        assert_eq!(doc.entries.len(), 2);
+    }
+
+    #[test]
+    fn test_parse_categorizes() {
+        let text = "uset r_scale \"1.0\"\nuset s_volume \"0.5\"\n";
+        let doc = ConfigDocument::parse(text);
+        assert_eq!(doc.entries[0].category, ConfigCategory::Graphics);
+        assert_eq!(doc.entries[1].category, ConfigCategory::Sound);
+    }
+
+    #[test]
+    fn test_parse_infers_type() {
+        let text = "uset r_scale \"1\"\nuset s_volume \"0.5\"\nuset g_console \"true\"\nuset i_joy \"name\"\n";
+        let doc = ConfigDocument::parse(text);
+        assert_eq!(doc.entries[0].val_type, ConfigValueType::Int);
+        assert_eq!(doc.entries[1].val_type, ConfigValueType::Float);
+        assert_eq!(doc.entries[2].val_type, ConfigValueType::Bool);
+        assert_eq!(doc.entries[3].val_type, ConfigValueType::String);
+    }
+
+    // --- ConfigDocument::get / set ---
+
+    #[test]
+    fn test_get_existing() {
+        let text = "uset r_scale \"1.0\"\nuset g_traffic \"1\"\n";
+        let doc = ConfigDocument::parse(text);
+        let entry = doc.get("r_scale").unwrap();
+        assert_eq!(entry.value, "1.0");
+    }
+
+    #[test]
+    fn test_get_missing() {
+        let text = "uset r_scale \"1.0\"\n";
+        let doc = ConfigDocument::parse(text);
+        assert!(doc.get("nonexistent").is_none());
+    }
+
+    #[test]
+    fn test_set_updates_value() {
+        let text = "uset r_scale \"1.0\"\n";
+        let mut doc = ConfigDocument::parse(text);
+        doc.set("r_scale", "2.0");
+        assert_eq!(doc.get("r_scale").unwrap().value, "2.0");
+    }
+
+    #[test]
+    fn test_set_new_key_does_nothing() {
+        let text = "uset r_scale \"1.0\"\n";
+        let mut doc = ConfigDocument::parse(text);
+        doc.set("nonexistent", "val");
+        assert!(doc.get("nonexistent").is_none());
+    }
+
+    // --- ConfigDocument::get_by_category ---
+
+    #[test]
+    fn test_get_by_category() {
+        let text = "uset r_scale \"1.0\"\nuset s_volume \"0.5\"\nuset r_fullscreen \"1\"\n";
+        let doc = ConfigDocument::parse(text);
+        let graphics = doc.get_by_category(ConfigCategory::Graphics);
+        assert_eq!(graphics.len(), 2);
+        let sound = doc.get_by_category(ConfigCategory::Sound);
+        assert_eq!(sound.len(), 1);
+    }
+
+    #[test]
+    fn test_get_by_category_none() {
+        let text = "uset r_scale \"1.0\"\n";
+        let doc = ConfigDocument::parse(text);
+        let sound = doc.get_by_category(ConfigCategory::Sound);
+        assert!(sound.is_empty());
+    }
+
+    // --- ConfigDocument::search ---
+
+    #[test]
+    fn test_search_by_key() {
+        let text = "uset r_scale \"1.0\"\nuset g_traffic \"1\"\n";
+        let doc = ConfigDocument::parse(text);
+        let results = doc.search("scale");
+        assert_eq!(results.len(), 1);
+    }
+
+    #[test]
+    fn test_search_by_value() {
+        let text = "uset r_scale \"1.0\"\nuset g_traffic \"0\"\n";
+        let doc = ConfigDocument::parse(text);
+        // "0" matches "1.0" (contains '0') and "0"
+        let results = doc.search("0");
+        assert_eq!(results.len(), 2);
+    }
+
+    #[test]
+    fn test_search_case_insensitive() {
+        let text = "uset r_Scale \"1.0\"\n";
+        let doc = ConfigDocument::parse(text);
+        let results = doc.search("scale");
+        assert_eq!(results.len(), 1);
+    }
+
+    #[test]
+    fn test_search_no_match() {
+        let text = "uset r_scale \"1.0\"\n";
+        let doc = ConfigDocument::parse(text);
+        let results = doc.search("zzzzz");
+        assert!(results.is_empty());
+    }
+
+    // --- ConfigDocument::apply_preset ---
+
+    #[test]
+    fn test_apply_preset() {
+        let text = "uset r_scale \"1.0\"\nuset g_traffic \"1\"\n";
+        let mut doc = ConfigDocument::parse(text);
+        doc.apply_preset(&[("r_scale", "2.0"), ("g_traffic", "0")]);
+        assert_eq!(doc.get("r_scale").unwrap().value, "2.0");
+        assert_eq!(doc.get("g_traffic").unwrap().value, "0");
+    }
+
+    // --- ConfigDocument::Display ---
+
+    #[test]
+    fn test_display_format() {
+        let text = "uset r_scale \"1.0\"\n";
+        let doc = ConfigDocument::parse(text);
+        let output = doc.to_string();
+        assert_eq!(output, "uset r_scale \"1.0\"\n");
+    }
+}

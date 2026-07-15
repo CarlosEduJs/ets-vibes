@@ -96,3 +96,54 @@ pub fn read_info_sii(save_path: &Path) -> (Option<u32>, Option<i64>, Vec<String>
 
     (version, file_time, deps)
 }
+
+#[cfg(test)]
+#[allow(clippy::unwrap_used)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_level_zero() {
+        assert_eq!(calc_level(0), 1);
+    }
+
+    #[test]
+    fn test_level_one() {
+        assert_eq!(calc_level(100), 2);
+    }
+
+    #[test]
+    fn test_level_two() {
+        assert_eq!(calc_level(300), 3);
+    }
+
+    #[test]
+    fn test_level_ten() {
+        // 10 -> xp = 100 * (10*9/2) = 100 * 45 = 4500
+        assert_eq!(calc_level(4500), 10);
+    }
+
+    #[test]
+    fn test_level_boundary_just_below() {
+        // level 2 needs 100 xp, so 99 -> level 1
+        assert_eq!(calc_level(99), 1);
+    }
+
+    #[test]
+    fn test_level_boundary_exact() {
+        // level 2 needs 100 xp
+        assert_eq!(calc_level(100), 2);
+    }
+
+    #[test]
+    fn test_level_large() {
+        // level 100 -> xp = 100 * (100*99/2) = 100 * 4950 = 495000
+        assert_eq!(calc_level(495000), 100);
+    }
+
+    #[test]
+    fn test_negative_xp() {
+        // NaN from sqrt(negative) floors to 0
+        assert_eq!(calc_level(-100), 0);
+    }
+}

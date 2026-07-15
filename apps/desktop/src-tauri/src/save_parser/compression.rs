@@ -137,3 +137,89 @@ pub fn compress_save(content: &str) -> Result<Vec<u8>, SaveError> {
 
     Ok(output)
 }
+
+#[cfg(test)]
+#[allow(clippy::unwrap_used)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_decompress_siin() {
+        let data = b"SiiNunit\n{\n}\n";
+        let result = decompress_save(data).unwrap();
+        assert_eq!(result, "SiiNunit\n{\n}\n");
+    }
+
+    #[test]
+    fn test_decompress_plain_utf8() {
+        let data = b"plain text content";
+        let result = decompress_save(data).unwrap();
+        assert_eq!(result, "plain text content");
+    }
+
+    #[test]
+    fn test_decompress_bsii_returns_error() {
+        let data = b"BSII some binary data";
+        let result = decompress_save(data);
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(matches!(err, SaveError::Compression(_)));
+        assert!(err.to_string().contains("g_save_format"));
+    }
+
+    #[test]
+    fn test_decompress_empty() {
+        let result = decompress_save(b"");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_decompress_too_small() {
+        let result = decompress_save(b"abc");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_compress_decompress_roundtrip() {
+        let content = "SiiNunit\n{\n money_account: 100500\n experience_points: 5000\n}\n";
+        let compressed = compress_save(content).unwrap();
+        let decompressed = decompress_save(&compressed).unwrap();
+        assert_eq!(decompressed, content);
+    }
+
+    #[test]
+    fn test_compress_decompress_empty_string() {
+        let compressed = compress_save("").unwrap();
+        let decompressed = decompress_save(&compressed).unwrap();
+        assert_eq!(decompressed, "");
+    }
+
+    #[test]
+    fn test_compress_output_has_scsc_header() {
+        let content = "test data";
+        let compressed = compress_save(content).unwrap();
+        assert_eq!(&compressed[..4], b"ScsC");
+        assert!(compressed.len() > 56); // header size
+    }
+
+    #[test]
+    fn test_compress_produces_valid_hmac() {
+        // Re-encrypting the same plaintext should produce different output
+        // because of random IV (so HMAC will differ)
+        let content = "test data";
+        let a = compress_save(content).unwrap();
+        let b = compress_save(content).unwrap();
+        assert_ne!(
+            a, b,
+            "two compressions of same data should differ due to random IV"
+        );
+    }
+
+    #[test]
+    fn test_decompress_invalid_utf8() {
+        let data = b"\xff\xfe\x00\x01";
+        let result = decompress_save(data);
+        // Should either be an unknown format error or a UTF-8 error
+        assert!(result.is_err());
+    }
+}

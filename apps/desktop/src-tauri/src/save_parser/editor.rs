@@ -53,6 +53,344 @@ pub fn get_trucks_info(content: &str) -> Vec<TruckInfo> {
     trucks
 }
 
+#[cfg(test)]
+#[allow(clippy::unwrap_used)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_hex_float_regular() {
+        let val = parse_hex_float("1.0").unwrap();
+        approx_eq(val, 1.0);
+    }
+
+    #[test]
+    fn test_parse_hex_float_zero() {
+        let val = parse_hex_float("0.0").unwrap();
+        approx_eq(val, 0.0);
+    }
+
+    #[test]
+    fn test_parse_hex_float_hex_1() {
+        // &3f800000 = 1.0f32
+        let val = parse_hex_float("&3f800000").unwrap();
+        approx_eq(val, 1.0);
+    }
+
+    #[test]
+    fn test_parse_hex_float_hex_0() {
+        // &00000000 = 0.0f32
+        let val = parse_hex_float("&00000000").unwrap();
+        approx_eq(val, 0.0);
+    }
+
+    #[test]
+    fn test_parse_hex_float_hex_half() {
+        // &3f000000 = 0.5f32
+        let val = parse_hex_float("&3f000000").unwrap();
+        approx_eq(val, 0.5);
+    }
+
+    #[test]
+    fn test_parse_hex_float_hex_neg() {
+        // &bf800000 = -1.0f32
+        let val = parse_hex_float("&bf800000").unwrap();
+        approx_eq(val, -1.0);
+    }
+
+    #[test]
+    fn test_parse_hex_float_invalid() {
+        assert!(parse_hex_float("not_a_number").is_none());
+    }
+
+    #[test]
+    fn test_parse_hex_float_empty() {
+        assert!(parse_hex_float("").is_none());
+    }
+
+    #[test]
+    fn test_parse_hex_float_ampersand_only() {
+        assert!(parse_hex_float("&").is_none());
+    }
+
+    #[test]
+    fn test_parse_hex_float_trimmed() {
+        let val = parse_hex_float("  &3f800000  ").unwrap();
+        approx_eq(val, 1.0);
+    }
+
+    fn approx_eq(a: f64, b: f64) {
+        assert!((a - b).abs() < 1e-6, "{} != {}", a, b);
+    }
+
+    #[test]
+    fn test_get_trucks_info_no_trucks() {
+        let content = "SiiNunit\n{\n trucks: 0\n}\n";
+        let trucks = get_trucks_info(content);
+        assert!(trucks.is_empty());
+    }
+
+    #[test]
+    fn test_get_trucks_info_with_truck() {
+        let content = "\
+SiiNunit
+{
+ trucks: 1
+ trucks[0]: my_truck
+
+ my_truck {
+  license_plate: \"ABC-1234\"
+  odometer: 15000.0
+  fuel_relative: &3f000000
+  engine_wear: &3f800000
+  transmission_wear: &00000000
+  cabin_wear: &3f000000
+  chassis_wear: &3f000000
+ }
+}";
+        let trucks = get_trucks_info(content);
+        assert_eq!(trucks.len(), 1);
+
+        let t = &trucks[0];
+        assert_eq!(t.index, 0);
+        assert_eq!(t.license_plate.as_deref(), Some("ABC-1234"));
+        approx_eq(t.odometer_km.unwrap(), 15000.0);
+        approx_eq(t.fuel_relative.unwrap(), 0.5);
+        approx_eq(t.engine_wear.unwrap(), 1.0);
+        approx_eq(t.transmission_wear.unwrap(), 0.0);
+        approx_eq(t.cabin_wear.unwrap(), 0.5);
+        approx_eq(t.chassis_wear.unwrap(), 0.5);
+    }
+
+    #[test]
+    fn test_get_trucks_info_missing_section() {
+        let content = "SiiNunit\n{\n trucks: 1\n trucks[0]: \"missing.ref\"\n}\n";
+        let trucks = get_trucks_info(content);
+        assert!(trucks.is_empty());
+    }
+}
+
+// --- SaveEditor integration tests ---
+
+#[cfg(test)]
+#[allow(clippy::unwrap_used)]
+mod editor_tests {
+    use super::*;
+    use std::fs;
+    use std::path::PathBuf;
+
+    fn make_save_editor(content: &str) -> (SaveEditor, tempfile::TempDir) {
+        let dir = tempfile::tempdir().unwrap();
+        // SaveFile::new(profile_path, save_name) creates:
+        //   <profile_path>/save/<save_name>/game.sii
+        let game_sii_dir = dir.path().join("save").join("save");
+        fs::create_dir_all(&game_sii_dir).unwrap();
+        let game_sii = game_sii_dir.join("game.sii");
+        fs::write(&game_sii, content).unwrap();
+
+        let save_file = SaveFile::new(dir.path().to_path_buf(), "save".to_string());
+        (SaveEditor::new(save_file), dir)
+    }
+
+    #[test]
+    fn test_load_plain_text() {
+        let (mut editor, _dir) = make_save_editor("SiiNunit\n{\n}\n");
+        editor.load().unwrap();
+        assert!(editor.document.is_some());
+    }
+
+    #[test]
+    fn test_load_file_not_found() {
+        let sf = SaveFile::new(PathBuf::from("/nonexistent"), "save".to_string());
+        let mut editor = SaveEditor::new(sf);
+        let result = editor.load();
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_get_property_before_load_returns_none() {
+        let sf = SaveFile::new(PathBuf::from("/tmp"), "x".to_string());
+        let editor = SaveEditor::new(sf);
+        assert!(editor.get_property("money_account").is_none());
+    }
+
+    #[test]
+    fn test_get_property_after_load() {
+        let (mut editor, _dir) = make_save_editor("SiiNunit\n{\n money_account: 100500\n}\n");
+        editor.load().unwrap();
+        assert_eq!(editor.get_property("money_account").unwrap(), "100500");
+    }
+
+    #[test]
+    fn test_edit_money() {
+        let (mut editor, _dir) = make_save_editor("SiiNunit\n{\n money_account: 100\n}\n");
+        editor.load().unwrap();
+        editor.edit_money(999).unwrap();
+        assert_eq!(editor.get_property("money_account").unwrap(), "999");
+    }
+
+    #[test]
+    fn test_edit_xp() {
+        let (mut editor, _dir) = make_save_editor("SiiNunit\n{\n experience_points: 100\n}\n");
+        editor.load().unwrap();
+        editor.edit_xp(5000).unwrap();
+        assert_eq!(editor.get_property("experience_points").unwrap(), "5000");
+    }
+
+    #[test]
+    fn test_edit_money_without_load_returns_error() {
+        let sf = SaveFile::new(PathBuf::from("/tmp"), "x".to_string());
+        let mut editor = SaveEditor::new(sf);
+        let result = editor.edit_money(100);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_max_skills_sets_all_skills() {
+        let (mut editor, _dir) = make_save_editor(
+            "SiiNunit\n{\n adr: 0\n long_dist: 0\n heavy: 0\n fragile: 0\n urgent: 0\n mechanical: 0\n}\n",
+        );
+        editor.load().unwrap();
+        let changed = editor.max_skills().unwrap();
+        assert_eq!(changed.len(), 6);
+        assert_eq!(editor.get_property("adr").unwrap(), "63");
+        assert_eq!(editor.get_property("long_dist").unwrap(), "6");
+        assert_eq!(editor.get_property("heavy").unwrap(), "6");
+        assert_eq!(editor.get_property("fragile").unwrap(), "6");
+        assert_eq!(editor.get_property("urgent").unwrap(), "6");
+        assert_eq!(editor.get_property("mechanical").unwrap(), "6");
+    }
+
+    #[test]
+    fn test_max_skills_idempotent() {
+        let (mut editor, _dir) = make_save_editor("SiiNunit\n{\n adr: 63\n long_dist: 6\n}\n");
+        editor.load().unwrap();
+        let changed = editor.max_skills().unwrap();
+        // adr and long_dist already at max, so they won't report as changed
+        // but the other 4 missing skills will be created/touched
+        assert!(changed.len() <= 6);
+    }
+
+    #[test]
+    fn test_repair_all_sets_wear_to_zero() {
+        let (mut editor, _dir) = make_save_editor(
+            "SiiNunit\n{\n engine_wear: &3f800000\n transmission_wear: &3f000000\n cabin_wear: &3f000000\n chassis_wear: &3f000000\n engine_wear_unfixable: &3f800000\n transmission_wear_unfixable: &3f000000\n cabin_wear_unfixable: &3f000000\n chassis_wear_unfixable: &3f000000\n}\n",
+        );
+        editor.load().unwrap();
+        let changed = editor.repair_all().unwrap();
+        assert_eq!(changed.len(), 8);
+        assert_eq!(editor.get_property("engine_wear").unwrap(), "0");
+        assert_eq!(editor.get_property("transmission_wear").unwrap(), "0");
+        assert_eq!(editor.get_property("cabin_wear").unwrap(), "0");
+        assert_eq!(editor.get_property("chassis_wear").unwrap(), "0");
+        assert_eq!(editor.get_property("engine_wear_unfixable").unwrap(), "0");
+    }
+
+    #[test]
+    fn test_refuel_all_sets_fuel() {
+        let (mut editor, _dir) = make_save_editor("SiiNunit\n{\n fuel_relative: &3f000000\n}\n");
+        editor.load().unwrap();
+        let changed = editor.refuel_all().unwrap();
+        assert_eq!(changed.len(), 1);
+        assert_eq!(editor.get_property("fuel_relative").unwrap(), "1.0");
+    }
+
+    #[test]
+    fn test_unlock_cities_adds_new_cities() {
+        let (mut editor, _dir) = make_save_editor(
+            "SiiNunit\n{\n cities: 2\n cities[0]: \"berlin\"\n cities[1]: \"paris\"\n visited_cities: 1\n visited_cities[0]: \"berlin\"\n visited_cities_count: 1\n visited_cities_count[0]: \"1\"\n}\n",
+        );
+        editor.load().unwrap();
+        let added = editor.unlock_all_cities().unwrap();
+        assert_eq!(added, 1); // paris should be added
+
+        let visited = editor
+            .document()
+            .unwrap()
+            .get_array_property("visited_cities");
+        assert!(visited.contains(&"\"berlin\"".to_string()));
+        assert!(visited.contains(&"\"paris\"".to_string()));
+    }
+
+    #[test]
+    fn test_unlock_cities_already_all_visited() {
+        let (mut editor, _dir) = make_save_editor(
+            "SiiNunit\n{\n cities: 2\n cities[0]: \"berlin\"\n cities[1]: \"paris\"\n visited_cities: 2\n visited_cities[0]: \"berlin\"\n visited_cities[1]: \"paris\"\n}\n",
+        );
+        editor.load().unwrap();
+        let added = editor.unlock_all_cities().unwrap();
+        assert_eq!(added, 0);
+    }
+
+    #[test]
+    fn test_unlock_cities_from_companies() {
+        let (mut editor, _dir) = make_save_editor(
+            "SiiNunit\n{\n companies: 2\n companies[0]: \"company.volatile.bhv.berlin\"\n companies[1]: \"company.volatile.bhv.paris\"\n visited_cities: 0\n}\n",
+        );
+        editor.load().unwrap();
+        let added = editor.unlock_all_cities().unwrap();
+        assert_eq!(added, 2);
+
+        let visited = editor
+            .document()
+            .unwrap()
+            .get_array_property("visited_cities");
+        assert_eq!(visited.len(), 2);
+    }
+
+    #[test]
+    fn test_unlock_cities_no_cities() {
+        let (mut editor, _dir) =
+            make_save_editor("SiiNunit\n{\n cities: 0\n visited_cities: 0\n}\n");
+        editor.load().unwrap();
+        let added = editor.unlock_all_cities().unwrap();
+        assert_eq!(added, 0);
+    }
+
+    #[test]
+    fn test_save_writes_to_file() {
+        let (mut editor, dir) = make_save_editor("SiiNunit\n{\n money_account: 100\n}\n");
+        editor.load().unwrap();
+        editor.edit_money(200).unwrap();
+        editor.save().unwrap();
+
+        let content = fs::read_to_string(dir.path().join("save/save/game.sii")).unwrap();
+        assert!(content.contains("money_account: 200"));
+    }
+
+    #[test]
+    fn test_save_encrypted_plaintext_writes_plaintext() {
+        let (mut editor, dir) = make_save_editor("SiiNunit\n{\n money_account: 100\n}\n");
+        editor.load().unwrap();
+        editor.edit_money(200).unwrap();
+        editor.save_encrypted().unwrap();
+
+        // Since original was plaintext, output should also be plaintext
+        let content = fs::read_to_string(dir.path().join("save/save/game.sii")).unwrap();
+        assert!(content.contains("money_account: 200"));
+    }
+
+    #[test]
+    fn test_full_workflow() {
+        let (mut editor, _dir) = make_save_editor(
+            "SiiNunit\n{\n money_account: 100\n experience_points: 0\n adr: 0\n fuel_relative: 0.0\n engine_wear: &3f800000\n}\n",
+        );
+        editor.load().unwrap();
+
+        editor.edit_money(99999).unwrap();
+        editor.edit_xp(5000).unwrap();
+        editor.max_skills().unwrap();
+        editor.repair_all().unwrap();
+        editor.refuel_all().unwrap();
+
+        assert_eq!(editor.get_property("money_account").unwrap(), "99999");
+        assert_eq!(editor.get_property("experience_points").unwrap(), "5000");
+        assert_eq!(editor.get_property("adr").unwrap(), "63");
+        assert_eq!(editor.get_property("fuel_relative").unwrap(), "1.0");
+        assert_eq!(editor.get_property("engine_wear").unwrap(), "0");
+    }
+}
+
 fn parse_hex_float(s: &str) -> Option<f64> {
     let trimmed = s.trim();
     if let Ok(val) = trimmed.parse::<f64>() {

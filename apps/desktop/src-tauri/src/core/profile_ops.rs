@@ -138,3 +138,175 @@ fn copy_dir_all(src: &Path, dst: &Path) -> Result<(), CoreError> {
     }
     Ok(())
 }
+
+#[cfg(test)]
+#[allow(clippy::unwrap_used)]
+mod tests {
+    use super::*;
+    use std::fs;
+
+    #[test]
+    fn test_is_valid_save_name_valid() {
+        assert!(is_valid_save_name("autosave"));
+        assert!(is_valid_save_name("quicksave_1"));
+        assert!(is_valid_save_name("my-save-123"));
+        assert!(is_valid_save_name("a"));
+    }
+
+    #[test]
+    fn test_is_valid_save_name_invalid() {
+        assert!(!is_valid_save_name(""));
+        assert!(!is_valid_save_name("save name"));
+        assert!(!is_valid_save_name("save/name"));
+        assert!(!is_valid_save_name("save.name"));
+        assert!(!is_valid_save_name("save\nname"));
+    }
+
+    #[test]
+    fn test_is_valid_save_name_unicode() {
+        // "salvar" is alphanumeric -> valid
+        assert!(is_valid_save_name("salvar"));
+    }
+
+    #[test]
+    fn test_update_info_sii_name_changes_name() {
+        let dir = tempfile::tempdir().unwrap();
+        let info_path = dir.path().join("info.sii");
+        fs::write(
+            &info_path,
+            "SiiNunit\n{\n name: \"old_name\"\n version: 10\n}\n",
+        )
+        .unwrap();
+        update_info_sii_name(dir.path(), "new_name").unwrap();
+        let content = fs::read_to_string(&info_path).unwrap();
+        assert!(content.contains("\"new_name\""));
+        assert!(!content.contains("old_name"));
+    }
+
+    #[test]
+    fn test_update_info_sii_name_no_name_field() {
+        let dir = tempfile::tempdir().unwrap();
+        let info_path = dir.path().join("info.sii");
+        fs::write(&info_path, "SiiNunit\n{\n version: 10\n}\n").unwrap();
+        update_info_sii_name(dir.path(), "new_name").unwrap();
+        let content = fs::read_to_string(&info_path).unwrap();
+        assert_eq!(content, "SiiNunit\n{\n version: 10\n}\n");
+    }
+
+    #[test]
+    fn test_update_info_sii_name_file_not_found() {
+        let dir = tempfile::tempdir().unwrap();
+        // no info.sii created — should not error
+        update_info_sii_name(dir.path(), "new_name").unwrap();
+    }
+
+    #[test]
+    fn test_rename_save_invalid_name() {
+        let dir = tempfile::tempdir().unwrap();
+        let save_dir = dir.path().join("saves").join("valid_save");
+        fs::create_dir_all(&save_dir).unwrap();
+        let result = rename_save(&save_dir, "invalid name");
+        assert!(result.is_err());
+        assert!(matches!(result.unwrap_err(), CoreError::Validation(_)));
+    }
+
+    #[test]
+    fn test_rename_save_success() {
+        let dir = tempfile::tempdir().unwrap();
+        let saves_dir = dir.path().join("saves");
+        let old_path = saves_dir.join("old_save");
+        fs::create_dir_all(&old_path).unwrap();
+        let info_path = old_path.join("info.sii");
+        fs::write(&info_path, "SiiNunit\n{\n name: \"old_save\"\n}\n").unwrap();
+
+        let new_path = rename_save(&old_path, "new_save").unwrap();
+        assert_eq!(new_path, saves_dir.join("new_save"));
+        assert!(new_path.exists());
+        assert!(!old_path.exists());
+
+        let content = fs::read_to_string(new_path.join("info.sii")).unwrap();
+        assert!(content.contains("\"new_save\""));
+    }
+
+    #[test]
+    fn test_rename_save_already_exists() {
+        let dir = tempfile::tempdir().unwrap();
+        let saves_dir = dir.path().join("saves");
+        let old_path = saves_dir.join("save_a");
+        let existing_path = saves_dir.join("save_b");
+        fs::create_dir_all(&old_path).unwrap();
+        fs::create_dir_all(&existing_path).unwrap();
+
+        let result = rename_save(&old_path, "save_b");
+        assert!(result.is_err());
+        assert!(matches!(result.unwrap_err(), CoreError::Validation(_)));
+    }
+
+    #[test]
+    fn test_clone_save_success() {
+        let dir = tempfile::tempdir().unwrap();
+        let saves_dir = dir.path().join("saves");
+        let src_path = saves_dir.join("original");
+        fs::create_dir_all(&src_path).unwrap();
+        fs::write(src_path.join("game.sii"), "content").unwrap();
+        let info_path = src_path.join("info.sii");
+        fs::write(&info_path, "SiiNunit\n{\n name: \"original\"\n}\n").unwrap();
+
+        let cloned_path = clone_save(&src_path, "clone_name").unwrap();
+        assert_eq!(cloned_path, saves_dir.join("clone_name"));
+        assert!(cloned_path.exists());
+        assert!(cloned_path.join("game.sii").exists());
+        let content = fs::read_to_string(cloned_path.join("info.sii")).unwrap();
+        assert!(content.contains("\"clone_name\""));
+    }
+
+    #[test]
+    fn test_clone_save_invalid_name() {
+        let dir = tempfile::tempdir().unwrap();
+        let result = clone_save(&dir.path().join("src"), "invalid/name");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_clone_save_already_exists() {
+        let dir = tempfile::tempdir().unwrap();
+        let saves_dir = dir.path().join("saves");
+        let src = saves_dir.join("src");
+        let dst = saves_dir.join("dst");
+        fs::create_dir_all(&src).unwrap();
+        fs::create_dir_all(&dst).unwrap();
+        let result = clone_save(&src, "dst");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_delete_save_creates_backup_and_removes() {
+        let dir = tempfile::tempdir().unwrap();
+        let save_dir = dir.path().join("save");
+        fs::create_dir_all(&save_dir).unwrap();
+        fs::write(save_dir.join("game.sii"), "data").unwrap();
+        fs::write(save_dir.join("info.sii"), "info").unwrap();
+
+        delete_save(&save_dir).unwrap();
+        assert!(!save_dir.exists());
+
+        // backup should exist inside save's parent
+        let backup_dir = dir.path().join("save");
+        assert!(!backup_dir.exists());
+    }
+
+    #[test]
+    fn test_delete_profile_removes_dir() {
+        let dir = tempfile::tempdir().unwrap();
+        let profile_dir = dir.path().join("profile");
+        fs::create_dir_all(&profile_dir).unwrap();
+        fs::write(profile_dir.join("profile.sii"), "data").unwrap();
+
+        let saves_dir = profile_dir.join("save");
+        fs::create_dir_all(&saves_dir).unwrap();
+        fs::write(saves_dir.join("game.sii"), "data").unwrap();
+
+        delete_profile(&profile_dir).unwrap();
+        assert!(!profile_dir.exists());
+    }
+}
