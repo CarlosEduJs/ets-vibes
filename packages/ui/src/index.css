@@ -1,5 +1,4 @@
 @import "@fontsource-variable/inter";
-@import "@fontsource/be-vietnam-pro";
 @import "@fontsource-variable/source-code-pro";
 
 @custom-variant dark (&:is(.dark *));
@@ -34,10 +33,9 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) * 1.4);
   --font-heading: var(--font-inter);
-  --font-body: var(--font-be-vietnam-pro);
+  --font-body: var(--font-inter);
   --font-mono: var(--font-source-code-pro);
   --font-inter: Inter Variable;
-  --font-be-vietnam-pro: Be Vietnam Pro;
   --font-source-code-pro: Source Code Pro Variable;
 }
 
@@ -125,16 +123,16 @@
   h4,
   h5,
   h6 {
-    font-family: var(--font-heading);
+    font-family: var(--font-body);
     letter-spacing: -0.01em;
   }
   body,
   p {
-    font-family: var(--font-heading);
+    font-family: var(--font-body);
     line-height: 1.6;
   }
   code,
   pre {
-    font-family: var(--font-heading);
+    font-family: var(--font-mono);
   }
 }
