@@ -1,8 +1,8 @@
 #![allow(dead_code)]
 
-mod commands;
-mod core;
-mod save_parser;
+pub mod commands;
+pub mod core;
+pub mod save_parser;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {

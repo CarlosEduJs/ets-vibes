@@ -1,0 +1,61 @@
+SiiNunit
+{
+economy : _nameless.7646.a03e.f410 {
+ bank: _nameless.7646.a028.4150
+ player: _nameless.7646.a03f.a2e0
+ companies: 2
+ companies[0]: company.volatile.bhv.berlin
+ companies[1]: company.volatile.eurogoodies.paris
+}
+
+bank : _nameless.7646.a028.4150 {
+ money_account: 99999
+ coinsurance_fixed: 1000
+ loan_limit: 0
+}
+
+driver_player : driver.125 {
+ experience_points: 0
+ adr: 0
+ long_dist: 0
+ heavy: 0
+ fragile: 0
+ urgent: 0
+ mechanical: 0
+}
+
+player : _nameless.7646.a03f.a2e0 {
+ hq_city: berlin
+ trucks: 1
+ trucks[0]: _nameless.4e43.34c0
+ cities: 2
+ cities[0]: berlin
+ cities[1]: paris
+ visited_cities: 1
+ visited_cities[0]: berlin
+ visited_cities_count: 1
+ visited_cities_count[0]: 1
+}
+
+vehicle : _nameless.4e43.34c0 {
+ license_plate: "ABC-1234"
+ odometer: 45231
+ fuel_relative: &3f000000
+ engine_wear: &3c50d570
+ transmission_wear: &3b1ead20
+ cabin_wear: &3c95946b
+ chassis_wear: &3d624fb0
+ engine_wear_unfixable: &3a1cae97
+ transmission_wear_unfixable: &3d05901d
+ cabin_wear_unfixable: &3d974782
+ chassis_wear_unfixable: &3d76db2a
+ wheels_wear: 0
+}
+
+garage : garage.berlin {
+ vehicles: 1
+ drivers: 0
+ trailers: 0
+ status: 0
+}
+}

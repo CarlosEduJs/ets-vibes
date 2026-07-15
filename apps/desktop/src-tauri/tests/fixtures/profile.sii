@@ -1,0 +1,18 @@
+SiiNunit
+{
+profile : _nameless.4e43.34c0 {
+ name: "Carlos"
+ company_name: "Carlos Transportes"
+ company_name_colored: "Carlos Transportes"
+ game_time: 87654
+ last_save_game_time: 87654
+ game_weather: 0
+ game_time_time: 360
+ game_time_time_factor: 1
+ game_time_date: 180
+ active_mods: 0
+ cached_experience: 1600
+ cached_distance: 245000
+ cached_income: 0
+}
+}

@@ -1,0 +1,109 @@
+SiiNunit
+{
+economy : _nameless.7646.a03e.f410 {
+ bank: _nameless.7646.a028.4150
+ player: _nameless.7646.a03f.a2e0
+ companies: 4
+ companies[0]: company.volatile.bhv.berlin
+ companies[1]: company.volatile.eurogoodies.paris
+ companies[2]: company.volatile.lkwlog.london
+ companies[3]: company.volatile.tree_et.madrid
+ garages: 2
+ garages[0]: garage.berlin
+ garages[1]: garage.paris
+}
+
+garage : garage.berlin {
+ vehicles: 1
+ drivers: 0
+ trailers: 0
+ status: 0
+ productivity: 0
+}
+
+garage : garage.paris {
+ vehicles: 0
+ drivers: 0
+ trailers: 0
+ status: 0
+ productivity: 0
+}
+
+bank : _nameless.7646.a028.4150 {
+ money_account: 50000000
+ coinsurance_fixed: 1000
+ coinsurance_ratio: &3dcccccd
+ accident_severity: 0
+ loans: 0
+ app_enabled: false
+ loan_limit: 0
+ overdraft: false
+}
+
+driver_player : driver.125 {
+ experience_points: 1600
+ adr: 63
+ long_dist: 6
+ heavy: 6
+ fragile: 6
+ urgent: 6
+ mechanical: 6
+}
+
+player : _nameless.7646.a03f.a2e0 {
+ hq_city: berlin
+ trucks: 1
+ trucks[0]: _nameless.4e43.34c0
+ visited_cities: 3
+ visited_cities[0]: berlin
+ visited_cities[1]: paris
+ visited_cities[2]: madrid
+ visited_cities_count: 1
+ visited_cities_count[0]: 1
+}
+
+vehicle : _nameless.4e43.34c0 {
+ license_plate: "ABC-1234"
+ odometer: 45231
+ fuel_relative: &3f000000
+ engine_wear: 0
+ transmission_wear: 0
+ cabin_wear: 0
+ chassis_wear: 0
+ engine_wear_unfixable: &3a1cae97
+ transmission_wear_unfixable: &3d05901d
+ cabin_wear_unfixable: &3d974782
+ chassis_wear_unfixable: &3d76db2a
+}
+
+company : company.volatile.bhv.berlin {
+ permanent_data: company.permanent.bhv
+ job_offer: 2
+ job_offer[0]: _nameless.7646.a03e.bea0
+ job_offer[1]: _nameless.7646.a185.e210
+ discovered: true
+ state: 0
+}
+
+company : company.volatile.eurogoodies.paris {
+ permanent_data: company.permanent.eurogoodies
+ job_offer: 1
+ job_offer[0]: _nameless.7646.a03e.bea0
+ discovered: false
+ state: 0
+}
+
+company : company.volatile.lkwlog.london {
+ permanent_data: company.permanent.lkwlog
+ job_offer: 0
+ discovered: false
+ state: 0
+}
+
+company : company.volatile.tree_et.madrid {
+ permanent_data: company.permanent.tree_et
+ job_offer: 0
+ discovered: false
+ state: 0
+}
+}

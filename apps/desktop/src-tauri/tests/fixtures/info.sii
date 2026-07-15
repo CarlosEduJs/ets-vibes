@@ -1,0 +1,20 @@
+SiiNunit
+{
+save_container : _nameless.4eb0.d400 {
+ name: "autosave"
+ time: 600
+ file_time: 1768155758
+ version: 90
+ info_version: 1
+ dependencies: 3
+ dependencies[0]: "dlc|eut2_fr|DLC - Vive la France !"
+ dependencies[1]: "dlc|eut2_iberia|DLC - Iberia"
+ dependencies[2]: "dlc|eut2_man_tgx|DLC - MAN TGX 2020"
+ info_players_experience: 1600
+ info_unlocked_recruitments: 14
+ info_unlocked_dealers: 8
+ info_visited_cities: 3
+ info_money_account: 50000000
+ info_explored_ratio: 0
+}
+}
