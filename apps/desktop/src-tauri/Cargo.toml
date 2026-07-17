@@ -3,6 +3,7 @@ name = "ets-vibes"
 version = "0.1.0"
 edition = "2021"
 description = "ETS Vibes - Desktop application"
+repository = "https://github.com/CarlosEduJs/ets-vibes"
 
 [lib]
 name = "ets_vibes_lib"

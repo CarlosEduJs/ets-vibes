@@ -15,6 +15,7 @@
     "format": "vp fmt",
     "staged": "vp staged",
     "prepare": "sh scripts/install-githooks.sh",
+    "tegami": "node scripts/tegami.mts",
     "cargo:check": "cargo check --workspace",
     "cargo:fmt": "cargo fmt --all --check",
     "cargo:clippy": "cargo clippy --workspace --all-targets -- -D warnings",
@@ -33,6 +34,7 @@
     "oxfmt": "^0.57.0",
     "oxlint": "^1.72.0",
     "rolldown": "1.1.4",
+    "tegami": "^1.2.5",
     "typescript": "^7.0.2",
     "vite-plus": "0.2.2"
   },
