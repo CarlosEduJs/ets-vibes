@@ -1,10 +1,11 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { Button } from "ui";
+import { Button, toast } from "ui";
 import * as v from "valibot";
 import type { ConfigDocument, ConfigValueType, EditResult } from "../../types";
-import { FileSelectorBar } from "./FileSelectorBar";
-import { ConfigTable } from "./ConfigTable";
+import { CONFIG_DESCRIPTIONS } from "../../config-descriptions";
+import { ConfigToolbar } from "./FileSelectorBar";
+import { ConfigTable, formatKeyName } from "./ConfigTable";
 
 interface ConfigEditorPageProps {
   readOnly: boolean;
@@ -43,17 +44,8 @@ export function ConfigEditorPage({ readOnly, onStatusChange }: ConfigEditorPageP
   const [configFilter, setConfigFilter] = useState("");
   const [configCategory, setConfigCategory] = useState("");
   const [configErrors, setConfigErrors] = useState<Record<string, string | null>>({});
-
-  const loadConfigs = useCallback(async () => {
-    onStatusChange("Searching config files...");
-    try {
-      const result = await invoke<string[]>("list_configs");
-      setConfigPaths(result);
-      onStatusChange(`Found ${result.length} config files`);
-    } catch (e) {
-      onStatusChange(`Error: ${e}`);
-    }
-  }, [onStatusChange]);
+  const [originalValues, setOriginalValues] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(true);
 
   const selectConfig = useCallback(
     async (path: string) => {
@@ -66,15 +58,44 @@ export function ConfigEditorPage({ readOnly, onStatusChange }: ConfigEditorPageP
       try {
         const result = await invoke<ConfigDocument>("load_config", { path });
         setConfigDoc(result);
-        onStatusChange(`Loaded ${result.entries.length} entries`);
+        const originals: Record<string, string> = {};
+        for (const e of result.entries) originals[e.key] = e.value;
+        setOriginalValues(originals);
+        const msg = `Loaded ${result.entries.length} entries`;
+        onStatusChange(msg);
       } catch (e) {
+        toast.error(String(e));
         onStatusChange(`Error: ${e}`);
       }
     },
     [onStatusChange],
   );
 
-  const handleConfigSave = useCallback(async () => {
+  useEffect(() => {
+    async function init() {
+      setLoading(true);
+      onStatusChange("Searching config files...");
+      try {
+        const paths = await invoke<string[]>("list_configs");
+        setConfigPaths(paths);
+        if (paths.length > 0) {
+          const firstPath = paths[0];
+          if (firstPath != null) {
+            await selectConfig(firstPath);
+          }
+        } else {
+          onStatusChange("No config files found");
+        }
+      } catch (e) {
+        toast.error(String(e));
+        onStatusChange(`Error: ${e}`);
+      }
+      setLoading(false);
+    }
+    init();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const onConfigSave = useCallback(async () => {
     if (!selectedConfig || !configDoc) return;
     onStatusChange("Saving config...");
     try {
@@ -82,13 +103,15 @@ export function ConfigEditorPage({ readOnly, onStatusChange }: ConfigEditorPageP
         path: selectedConfig,
         entries: configDoc.entries,
       });
+      toast.success(result.message);
       onStatusChange(result.message);
     } catch (e) {
+      toast.error(String(e));
       onStatusChange(`Error: ${e}`);
     }
   }, [selectedConfig, configDoc, onStatusChange]);
 
-  const handleConfigValueChange = useCallback(
+  const onConfigValueChange = useCallback(
     (key: string, value: string, type: ConfigValueType) => {
       if (!configDoc) return;
       const error = validateValue(value, type);
@@ -101,68 +124,89 @@ export function ConfigEditorPage({ readOnly, onStatusChange }: ConfigEditorPageP
     [configDoc],
   );
 
+  const onRevert = useCallback(
+    (key: string) => {
+      const original = originalValues[key];
+      if (!configDoc || original === undefined) return;
+      const entry = configDoc.entries.find((e) => e.key === key);
+      if (!entry) return;
+      onConfigValueChange(key, original, entry.value_type);
+    },
+    [configDoc, originalValues, onConfigValueChange],
+  );
+
   const filteredEntries =
     configDoc?.entries.filter((e) => {
       if (configCategory && e.category !== configCategory) return false;
       if (configFilter) {
         const q = configFilter.toLowerCase();
-        return e.key.toLowerCase().includes(q) || e.value.toLowerCase().includes(q);
+        return (
+          e.key.toLowerCase().includes(q) ||
+          e.value.toLowerCase().includes(q) ||
+          formatKeyName(e.key).toLowerCase().includes(q)
+        );
       }
       return true;
     }) ?? [];
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
+        Loading config...
+      </div>
+    );
+  }
+
+  if (!configDoc) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full gap-3 text-sm text-muted-foreground">
+        <p>{configPaths.length === 0 ? "No config files found." : "Failed to load config."}</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4 h-full overflow-y-auto">
-      <div className="flex items-center gap-3">
-        <Button variant="outline" size="sm" onClick={loadConfigs}>
-          Find Configs
+      <div className="sticky top-0 z-10 flex flex-wrap items-start justify-between gap-3 bg-background pb-2">
+        <ConfigToolbar
+          configFilter={configFilter}
+          onFilterChange={setConfigFilter}
+          configCategory={configCategory}
+          onCategoryChange={setConfigCategory}
+        />
+        <Button
+          variant="default"
+          size="sm"
+          onClick={onConfigSave}
+          disabled={readOnly || Object.values(configErrors).some((e) => e !== null)}
+        >
+          Save Config
         </Button>
       </div>
 
-      <FileSelectorBar
-        configPaths={configPaths}
-        selectedConfig={selectedConfig}
-        onSelectConfig={selectConfig}
-        configFilter={configFilter}
-        onFilterChange={setConfigFilter}
-        configCategory={configCategory}
-        onCategoryChange={setConfigCategory}
-      />
-
-      {configDoc && (
-        <>
-          {Object.values(configErrors).some((e) => e !== null) && (
-            <div className="text-xs text-destructive">Fix validation errors before saving</div>
-          )}
-
-          {filteredEntries.length > 0 ? (
-            <div className="overflow-x-auto">
-              <ConfigTable
-                entries={filteredEntries}
-                configErrors={configErrors}
-                onValueChange={handleConfigValueChange}
-                readOnly={readOnly}
-              />
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">No entries match the filter.</p>
-          )}
-
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>
-              {filteredEntries.length} / {configDoc.entries.length} entries
-            </span>
-            <Button
-              variant="default"
-              size="sm"
-              onClick={handleConfigSave}
-              disabled={readOnly || Object.values(configErrors).some((e) => e !== null)}
-            >
-              Save Config
-            </Button>
-          </div>
-        </>
+      {Object.values(configErrors).some((e) => e !== null) && (
+        <div className="text-xs text-destructive">Fix validation errors before saving</div>
       )}
+
+      {filteredEntries.length > 0 ? (
+        <div className="overflow-x-auto">
+          <ConfigTable
+            entries={filteredEntries}
+            configErrors={configErrors}
+            originalValues={originalValues}
+            onValueChange={onConfigValueChange}
+            onRevert={onRevert}
+            descriptions={CONFIG_DESCRIPTIONS}
+            readOnly={readOnly}
+          />
+        </div>
+      ) : (
+        <p className="text-sm text-muted-foreground">No entries match the filter.</p>
+      )}
+
+      <div className="text-xs text-muted-foreground">
+        {filteredEntries.length} / {configDoc.entries.length} entries
+      </div>
     </div>
   );
 }

@@ -1,7 +1,6 @@
 import type { ProfileInfo } from "../../types";
 import {
   Button,
-  Card,
   CardTitle,
   CardDescription,
   CardHeader,
@@ -13,11 +12,12 @@ import {
   EmptyContent,
   EmptyMedia,
 } from "ui";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Loader2 } from "lucide-react";
 
 interface ProfileGridProps {
   profiles: ProfileInfo[];
   selectedProfile: string | null;
+  loading?: boolean;
   onSelectProfile: (path: string) => void;
   onLoadProfiles: () => void;
 }
@@ -25,9 +25,19 @@ interface ProfileGridProps {
 export function ProfileGrid({
   profiles,
   selectedProfile,
+  loading,
   onSelectProfile,
   onLoadProfiles,
 }: ProfileGridProps) {
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 gap-3">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <p className="text-sm text-muted-foreground">Loading profiles...</p>
+      </div>
+    );
+  }
+
   return (
     <div>
       <div className="mb-4 flex items-center justify-end">
@@ -49,7 +59,7 @@ export function ProfileGrid({
           </EmptyContent>
         </Empty>
       ) : (
-        <div className="flex flex-wrap gap-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {profiles.map((p) => (
             <ProfileCard
               key={p.path}
@@ -73,23 +83,34 @@ function ProfileCard({
   onSelect: () => void;
 }) {
   return (
-    <Card onClick={onSelect} className="group border-none w-80">
+    <button
+      type="button"
+      onClick={onSelect}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onSelect();
+        }
+      }}
+      className="group cursor-pointer rounded-xl bg-card/80 backdrop-blur-lg text-card-foreground shadow-sm border-none text-left w-full"
+    >
       <CardHeader className="flex-row justify-between">
-        <CardTitle className="text-xl">{profile.display_name}</CardTitle>
+        <CardTitle>{profile.display_name}</CardTitle>
         <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-1" />
       </CardHeader>
       <CardFooter className="justify-between">
         {profile.cached_distance != null && (
-          <CardDescription className="text-sm text-muted-foreground">
-            {profile.cached_distance.toLocaleString()} km
+          <CardDescription className="text-muted-foreground">
+            Distance of {profile.cached_distance.toLocaleString()} km and{" "}
+            {(profile.cached_experience ?? 0).toLocaleString()} XP
           </CardDescription>
         )}
         {profile.active_mods.length > 0 && (
-          <CardDescription className="text-sm text-muted-foreground">
+          <CardDescription className="text-muted-foreground">
             {profile.active_mods.length} mod{profile.active_mods.length !== 1 ? "s" : ""}
           </CardDescription>
         )}
       </CardFooter>
-    </Card>
+    </button>
   );
 }

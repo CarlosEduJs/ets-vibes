@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Toaster } from "@ui/index";
 
 interface AppShellProps {
   header: ReactNode;
@@ -12,6 +13,7 @@ export function AppShell({ header, main, status }: AppShellProps) {
       {header}
       <main className="flex-1 overflow-hidden p-6">{main}</main>
       {status}
+      <Toaster position="bottom-right" />
     </div>
   );
 }

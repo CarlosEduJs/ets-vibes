@@ -30,6 +30,8 @@ pub struct SaveData {
     pub save_version: Option<u32>,
     pub file_time: Option<i64>,
     pub mods: Vec<String>,
+    pub game_version: Option<String>,
+    pub compatibility_warning: Option<String>,
 }
 
 #[derive(Serialize)]

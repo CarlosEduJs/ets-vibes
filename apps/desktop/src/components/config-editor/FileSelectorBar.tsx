@@ -1,9 +1,6 @@
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "ui";
+import { Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "ui";
 
-interface FileSelectorBarProps {
-  configPaths: string[];
-  selectedConfig: string | null;
-  onSelectConfig: (path: string) => void;
+interface ConfigToolbarProps {
   configFilter: string;
   onFilterChange: (value: string) => void;
   configCategory: string;
@@ -27,39 +24,33 @@ const categories = [
   "Misc",
 ];
 
-export function FileSelectorBar({
-  configPaths,
-  selectedConfig,
-  onSelectConfig,
+export function ConfigToolbar({
   configFilter,
   onFilterChange,
   configCategory,
   onCategoryChange,
-}: FileSelectorBarProps) {
+}: ConfigToolbarProps) {
   return (
-    <div className="mb-4 flex flex-wrap items-center gap-3">
-      {configPaths.length > 0 && (
-        <Select value={selectedConfig ?? undefined} onValueChange={onSelectConfig}>
-          <SelectTrigger className="w-56">
-            <SelectValue placeholder="Select a config file..." />
-          </SelectTrigger>
-          <SelectContent>
-            {configPaths.map((p) => (
-              <SelectItem key={p} value={p}>
-                {p.split("/").slice(-3).join("/")}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      )}
-
-      <input
-        type="text"
-        placeholder="Search..."
-        value={configFilter}
-        onChange={(e) => onFilterChange(e.target.value)}
-        className="w-48 rounded-md border border-border bg-card px-3 py-1.5 text-xs outline-none focus:border-ring"
-      />
+    <div className="flex flex-wrap items-center gap-3">
+      <div className="relative">
+        <Input
+          type="text"
+          placeholder="Search..."
+          value={configFilter}
+          onChange={(e) => onFilterChange(e.target.value)}
+          className="w-48"
+        />
+        {configFilter && (
+          <button
+            type="button"
+            onClick={() => onFilterChange("")}
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground text-sm leading-none"
+            aria-label="Clear search"
+          >
+            ✕
+          </button>
+        )}
+      </div>
 
       <Select value={configCategory} onValueChange={onCategoryChange}>
         <SelectTrigger className="w-40">

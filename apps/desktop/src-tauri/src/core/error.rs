@@ -10,4 +10,6 @@ pub enum CoreError {
     Validation(String),
     #[error("Not found: {0}")]
     NotFound(String),
+    #[error("Unsupported game version: {0}")]
+    UnsupportedVersion(String),
 }

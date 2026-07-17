@@ -1,19 +1,24 @@
+import { Settings } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "ui";
 
+export type TabId = "saves" | "config" | "settings";
+
 interface TabBarProps {
-  activeTab: "saves" | "config";
-  onTabChange: (tab: "saves" | "config") => void;
+  activeTab: TabId;
+  onTabChange: (tab: TabId) => void;
 }
 
 export function TabBar({ activeTab, onTabChange }: TabBarProps) {
   return (
-    <div className="px-6">
-      <Tabs value={activeTab} onValueChange={(v) => onTabChange(v as "saves" | "config")}>
-        <TabsList className="gap-0 p-0 h-fit border">
-          <TabsTrigger value="saves">Save Editor</TabsTrigger>
-          <TabsTrigger value="config">Config Editor</TabsTrigger>
-        </TabsList>
-      </Tabs>
-    </div>
+    <Tabs value={activeTab} onValueChange={(v) => onTabChange(v as TabId)}>
+      <TabsList className="gap-0 p-0 h-fit border">
+        <TabsTrigger value="saves">Save Editor</TabsTrigger>
+        <TabsTrigger value="config">Config Editor</TabsTrigger>
+        <TabsTrigger value="settings" className="gap-1.5">
+          <Settings className="h-3.5 w-3.5" />
+          Settings
+        </TabsTrigger>
+      </TabsList>
+    </Tabs>
   );
 }

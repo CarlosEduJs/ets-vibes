@@ -46,6 +46,8 @@ export interface SaveData {
   save_version: number | null;
   file_time: number | null;
   mods: string[];
+  game_version: string | null;
+  compatibility_warning: string | null;
 }
 
 export type ConfigValueType = "Int" | "Float" | "Bool" | "String";

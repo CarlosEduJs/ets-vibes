@@ -1,5 +1,9 @@
 use std::path::Path;
 
+use crate::core::compatibility::{
+    check_compatibility, find_game_version_in_config, CompatibilityStatus,
+};
+use crate::core::detection::find_config_files;
 use crate::save_parser::compression::decompress_save;
 use crate::save_parser::sii::SiiDocument;
 
@@ -95,6 +99,40 @@ pub fn read_info_sii(save_path: &Path) -> (Option<u32>, Option<i64>, Vec<String>
     }
 
     (version, file_time, deps)
+}
+
+/// Read game version from config.cfg, returning (version_string, warning).
+pub fn read_game_version() -> (Option<String>, Option<String>) {
+    let configs = find_config_files();
+    for path in &configs {
+        let content = match std::fs::read_to_string(path) {
+            Ok(c) => c,
+            Err(_) => continue,
+        };
+        if let Some(version) = find_game_version_in_config(&content) {
+            let warning = match check_compatibility(&version) {
+                CompatibilityStatus::Supported => None,
+                CompatibilityStatus::Untested { detected_version } => {
+                    Some(format!(
+                        "Game version {} is newer than tested ({}). Should work, but proceed with caution.",
+                        detected_version,
+                        crate::core::compatibility::TESTED_GAME_VERSION.to_display(),
+                    ))
+                }
+                CompatibilityStatus::Deprecated { detected_version, min_version } => {
+                    Some(format!(
+                        "Game version {} is older than minimum supported ({}). Some features may not work.",
+                        detected_version, min_version,
+                    ))
+                }
+                CompatibilityStatus::Unknown => {
+                    Some("Could not determine game version from config.cfg.".into())
+                }
+            };
+            return (Some(version), warning);
+        }
+    }
+    (None, None)
 }
 
 #[cfg(test)]

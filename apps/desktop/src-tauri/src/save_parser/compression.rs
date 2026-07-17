@@ -85,8 +85,14 @@ fn decrypt_scsc(data: &[u8]) -> Result<String, SaveError> {
         .read_to_end(&mut result)
         .map_err(|e| SaveError::Compression(format!("Zlib decompression failed: {e}")))?;
 
+    if result.len() >= 4 && &result[..4] == b"BSII" {
+        return Err(SaveError::Compression(
+            "Binary format BSII not supported. Load the save in Euro Truck Simulator 2 and save again to convert, or set g_save_format 2 in config.cfg.".into(),
+        ));
+    }
+
     let text = String::from_utf8(result)
-        .map_err(|e| SaveError::Compression(format!("Zlib output is not valid UTF-8: {e}")))?;
+        .map_err(|e| SaveError::Compression(format!("Save uses an unsupported format: {e}",)))?;
 
     Ok(text)
 }

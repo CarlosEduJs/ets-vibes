@@ -1,9 +1,31 @@
 use std::path::Path;
 
+use serde::Serialize;
+
 use crate::core::backup::backup_file;
+use crate::core::compatibility::APP_VERSION;
 use crate::save_parser::config::{ConfigDocument, ConfigEntry};
 
 use super::EditResult;
+
+#[derive(Serialize)]
+pub struct AppVersionInfo {
+    pub app_version: String,
+    pub game_version: Option<String>,
+    pub tested_game_version: String,
+    pub compatibility_warning: Option<String>,
+}
+
+#[tauri::command]
+pub fn get_app_info() -> Result<AppVersionInfo, String> {
+    let (game_version, compatibility_warning) = super::helpers::read_game_version();
+    Ok(AppVersionInfo {
+        app_version: APP_VERSION.to_string(),
+        game_version,
+        tested_game_version: crate::core::compatibility::TESTED_GAME_VERSION.to_display(),
+        compatibility_warning,
+    })
+}
 
 #[tauri::command]
 pub fn list_configs() -> Result<Vec<String>, String> {

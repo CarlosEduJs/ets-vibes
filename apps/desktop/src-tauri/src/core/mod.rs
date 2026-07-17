@@ -1,4 +1,5 @@
 pub mod backup;
+pub mod compatibility;
 pub mod config_category;
 pub mod detection;
 pub mod error;

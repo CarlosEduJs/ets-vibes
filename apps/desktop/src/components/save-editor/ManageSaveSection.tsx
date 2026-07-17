@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Button, Input, Collapsible, CollapsibleTrigger, CollapsibleContent } from "ui";
+import { ChevronDown } from "lucide-react";
 
 interface ManageSaveSectionProps {
   readOnly: boolean;
@@ -18,55 +19,60 @@ export function ManageSaveSection({
   const [clone, setClone] = useState("");
 
   return (
-    <Collapsible className="rounded-lg border border-border">
-      <CollapsibleTrigger className="flex w-full items-center justify-between px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
-        Manage Save
-      </CollapsibleTrigger>
-      <CollapsibleContent className="space-y-3 border-t border-border p-4">
-        <div className="flex items-center gap-2">
-          <Input
-            placeholder="New save name"
-            value={rename}
-            onChange={(e) => setRename(e.target.value)}
-            disabled={readOnly}
-            className="w-40"
-          />
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => {
-              onRename(rename);
-              setRename("");
-            }}
-            disabled={readOnly || !rename.trim()}
-          >
-            Rename
-          </Button>
-        </div>
-        <div className="flex items-center gap-2">
-          <Input
-            placeholder="Clone name"
-            value={clone}
-            onChange={(e) => setClone(e.target.value)}
-            disabled={readOnly}
-            className="w-40"
-          />
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => {
-              onClone(clone);
-              setClone("");
-            }}
-            disabled={readOnly || !clone.trim()}
-          >
-            Clone
-          </Button>
-          <Button variant="destructive" size="sm" onClick={onDelete} disabled={readOnly}>
-            Delete Save
-          </Button>
-        </div>
-      </CollapsibleContent>
-    </Collapsible>
+    <div className="space-y-3">
+      <Collapsible className="rounded-lg border border-border">
+        <CollapsibleTrigger className="flex w-full items-center justify-between px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
+          Manage Save
+          <ChevronDown className="h-4 w-4 transition-transform data-[state=open]:rotate-180" />
+        </CollapsibleTrigger>
+        <CollapsibleContent className="space-y-3 border-t border-border p-4">
+          <div className="flex items-center gap-2">
+            <Input
+              placeholder="New save name"
+              value={rename}
+              onChange={(e) => setRename(e.target.value)}
+              disabled={readOnly}
+              className="w-56"
+            />
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                onRename(rename);
+                setRename("");
+              }}
+              disabled={readOnly || !rename.trim()}
+            >
+              Rename
+            </Button>
+          </div>
+          <div className="flex items-center gap-2">
+            <Input
+              placeholder="Clone name"
+              value={clone}
+              onChange={(e) => setClone(e.target.value)}
+              disabled={readOnly}
+              className="w-56"
+            />
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                onClone(clone);
+                setClone("");
+              }}
+              disabled={readOnly || !clone.trim()}
+            >
+              Clone
+            </Button>
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
+      <div className="flex justify-end rounded-lg border border-destructive/20 px-4 py-3">
+        <Button variant="destructive" size="sm" onClick={onDelete} disabled={readOnly}>
+          Delete Save
+        </Button>
+      </div>
+    </div>
   );
 }
