@@ -49,11 +49,11 @@ jobs:
             libssl-dev \
             libxdo-dev
 
-      - run: pnpm tauri build
+      - run: pnpm tauri build --target ${{ matrix.target }}
 
       - name: Upload Tauri bundles to GitHub Release
         shell: bash
         run: |
           TAG="${{ fromJson(inputs.plan).announcement_tag }}"
-          BUNDLE_DIR="apps/desktop/src-tauri/target/release/bundle"
-          gh release upload "$TAG" "$BUNDLE_DIR"/**/* --clobber
+          BUNDLE_DIR="apps/desktop/src-tauri/target/${{ matrix.target }}/release/bundle"
+          find "$BUNDLE_DIR" -type f -exec gh release upload "$TAG" {} + --clobber

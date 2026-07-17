@@ -17,6 +17,4 @@
       patchelf \
       libssl-dev \
       libxdo-dev
-- name: Install system dependencies (macOS)
-  if: runner.os == 'macOS'
-  run: brew install webkit2gtk
+
