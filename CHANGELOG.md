@@ -1,6 +1,6 @@
----
-bump: minor
----
+# Changelog
+
+## ets-vibes@0.1.0 (2026-07-18)
 
 ## Thanks for using the app!
 
