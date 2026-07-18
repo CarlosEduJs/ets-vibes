@@ -11,7 +11,6 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-      actions: write
     outputs:
       has_notes: ${{ steps.check.outputs.has_notes }}
     steps:
@@ -82,8 +81,7 @@ jobs:
             git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
             git tag "$TAG"
             git push origin "$TAG"
-            gh workflow run release.yml --ref "$TAG"
-            echo "Tagged and triggered release for $TAG"
+            echo "Tagged $TAG"
           else
             echo "Tag $TAG already exists, skipping"
           fi
