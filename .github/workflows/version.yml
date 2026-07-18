@@ -6,29 +6,47 @@ on:
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
 jobs:
-  version:
-    if: hashFiles('release-notes/*.md') != ''
+  manage:
     runs-on: ubuntu-latest
     permissions:
       contents: write
       pull-requests: write
+    outputs:
+      has_notes: ${{ steps.check.outputs.has_notes }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - id: check
+        run: |
+          files=$(ls release-notes/*.md 2>/dev/null | grep -v README.md | head -1)
+          if [ -n "$files" ]; then
+            echo "has_notes=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_notes=false" >> $GITHUB_OUTPUT
+          fi
+
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
           node-version: "24"
+
       - name: Install Tauri system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y \
             libwebkit2gtk-4.1-dev \
             libglib2.0-dev
+
       - run: pnpm install --frozen-lockfile
-      - run: pnpm bump
+
+      - name: Bump versions
+        if: steps.check.outputs.has_notes == 'true'
+        run: pnpm bump
+
       - name: Create Version Packages PR
+        if: steps.check.outputs.has_notes == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -48,16 +66,8 @@ jobs:
             --head "$BRANCH" \
             --base main
 
-  tag:
-    if: hashFiles('release-notes/*.md') == ''
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
       - name: Tag current version if not already tagged
+        if: steps.check.outputs.has_notes == 'false'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
