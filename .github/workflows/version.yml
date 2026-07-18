@@ -1,0 +1,75 @@
+name: Version Packages
+on:
+  push:
+    branches: [main]
+
+concurrency: ${{ github.workflow }}-${{ github.ref }}
+
+jobs:
+  version:
+    if: hashFiles('release-notes/*.md') != ''
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Install Tauri system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libglib2.0-dev
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm bump
+      - name: Create Version Packages PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          NEW_VERSION=$(rg '^version = "' apps/desktop/src-tauri/Cargo.toml | head -1 | sed 's/.*"\(.*\)"/\1/')
+          BRANCH="release/v${NEW_VERSION}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          git add -A
+          git commit -m "chore: release v${NEW_VERSION}"
+          git push origin "$BRANCH"
+
+          gh pr create \
+            --title "Version Packages v${NEW_VERSION}" \
+            --body "This PR was automatically generated. Merge it to trigger the release build." \
+            --head "$BRANCH" \
+            --base main
+
+  tag:
+    if: hashFiles('release-notes/*.md') == ''
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Tag current version if not already tagged
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION=$(rg '^version = "' apps/desktop/src-tauri/Cargo.toml | head -1 | sed 's/.*"\(.*\)"/\1/')
+          LATEST=$(git tag --list 'v*' --sort=-version:refname | head -1)
+          if [ -z "$LATEST" ]; then
+            echo "No previous tags found, skipping"
+          elif [ "$LATEST" = "v${VERSION}" ]; then
+            echo "Tag v${VERSION} already exists, skipping"
+          else
+            git tag "v${VERSION}"
+            git push origin "v${VERSION}"
+            echo "Tagged v${VERSION}"
+          fi
