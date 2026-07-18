@@ -60,13 +60,13 @@ jobs:
           git checkout -b "$BRANCH"
           git add -A
           git commit -m "chore: release v${NEW_VERSION}"
-          git push origin "$BRANCH"
+          git push origin "$BRANCH" --force
 
           gh pr create \
             --title "Version Packages v${NEW_VERSION}" \
             --body "This PR was automatically generated. Merge it to trigger the release build." \
             --head "$BRANCH" \
-            --base main
+            --base main || true
 
       - name: Tag and release current version if not already tagged
         if: steps.check.outputs.has_notes == 'false'
