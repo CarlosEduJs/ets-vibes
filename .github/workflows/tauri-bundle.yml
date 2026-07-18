@@ -49,6 +49,10 @@ jobs:
             libssl-dev \
             libxdo-dev
 
+      - name: Generate icon.ico for Windows
+        if: runner.os == 'Windows'
+        run: npx png-to-ico apps/desktop/src-tauri/icons/icon.png > apps/desktop/src-tauri/icons/icon.ico
+
       - run: pnpm tauri build --target ${{ matrix.target }}
 
       - name: Upload Tauri bundles to GitHub Release
