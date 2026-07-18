@@ -52,6 +52,9 @@ coverage
 target/
 *.rs.bk
 
+# Processed release notes
+release-notes/processed/
+
 # Misc
 *.tgz
 .cache
