@@ -15,6 +15,7 @@
     "format": "vp fmt",
     "staged": "vp staged",
     "prepare": "sh scripts/install-githooks.sh",
+    "generate-icon": "node scripts/generate-icon.mts",
     "bump": "node scripts/bump.mts",
     "tag": "node scripts/tag.mts",
     "cargo:check": "cargo check --workspace",
