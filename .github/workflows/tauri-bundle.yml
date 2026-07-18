@@ -1,14 +1,39 @@
-name: Tauri Bundle
-
+name: Release
 on:
-  workflow_call:
-    inputs:
-      plan:
-        required: true
-        type: string
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
 
 jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Generate changelog entry
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          VERSION="${TAG#v}"
+          awk "BEGIN{flag=0} /^## ets-vibes@${VERSION}/{flag=1; next} /^## ets-vibes@/{if(flag) exit} /^# Changelog/{if(flag) exit} flag" CHANGELOG.md | sed '/./,$!d' > release-notes-temp.md
+          if [ ! -s release-notes-temp.md ]; then
+            echo "No changelog entry found for ${TAG}, creating empty notes"
+            echo "Release ${TAG}" > release-notes-temp.md
+          fi
+      - name: Create Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          gh release create "$TAG" \
+            --title "$TAG" \
+            --notes-file release-notes-temp.md \
+            --verify-tag || echo "Release already exists, skipping creation"
+
   build:
+    needs: [create-release]
     name: tauri-bundle (${{ matrix.target }})
     strategy:
       fail-fast: false
@@ -55,9 +80,9 @@ jobs:
 
       - run: pnpm tauri build --target ${{ matrix.target }}
 
-      - name: Upload Tauri bundles to GitHub Release
+      - name: Upload bundles to Release
         shell: bash
         run: |
-          TAG="${{ fromJson(inputs.plan).announcement_tag }}"
+          TAG="${GITHUB_REF_NAME}"
           BUNDLE_DIR="target/${{ matrix.target }}/release/bundle"
-          find "$BUNDLE_DIR" -type f \( -name "*.dmg" -o -name "*.deb" -o -name "*.AppImage" -o -name "*.msi" -o -name "*.exe" -o -name "*.tar.*" \) -exec gh release upload "$TAG" --clobber {} +
+          find "$BUNDLE_DIR" -type f \( -name "*.dmg" -o -name "*.deb" -o -name "*.AppImage" -o -name "*.msi" -o -name "*.exe" \) -exec gh release upload "$TAG" --clobber {} +
