@@ -11,6 +11,7 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+      actions: write
     outputs:
       has_notes: ${{ steps.check.outputs.has_notes }}
     steps:
@@ -68,18 +69,21 @@ jobs:
             --head "$BRANCH" \
             --base main
 
-      - name: Tag current version if not already tagged
+      - name: Tag and release current version if not already tagged
         if: steps.check.outputs.has_notes == 'false'
         env:
           GH_TOKEN: ${{ secrets.GH_PAT }}
         run: |
           VERSION=$(grep '^version = "' apps/desktop/src-tauri/Cargo.toml | head -1 | sed 's/.*"\(.*\)"/\1/')
+          TAG="v${VERSION}"
           LATEST=$(git tag --list 'v*' --sort=-version:refname | head -1)
-          if [ -z "$LATEST" ] || [ "$LATEST" != "v${VERSION}" ]; then
+          if [ -z "$LATEST" ] || [ "$LATEST" != "$TAG" ]; then
+            git config --unset-all http.https://github.com/.extraheader || true
             git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
-            git tag "v${VERSION}"
-            git push origin "v${VERSION}"
-            echo "Tagged v${VERSION}"
+            git tag "$TAG"
+            git push origin "$TAG"
+            gh workflow run release.yml --ref "$TAG"
+            echo "Tagged and triggered release for $TAG"
           else
-            echo "Tag v${VERSION} already exists, skipping"
+            echo "Tag $TAG already exists, skipping"
           fi
