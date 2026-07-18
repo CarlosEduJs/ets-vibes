@@ -1,4 +1,12 @@
 
+## ets-vibes@0.1.2 (2026-07-18)
+
+## Changed
+
+- Removed cargo-dist completely: no more useless binary archives and install scripts in the release
+- Created own release workflow that builds only Tauri native installers (.dmg, .AppImage/.deb, .msi)
+- Release page now shows only changelog + platform installers
+
 ## ets-vibes@0.1.1 (2026-07-18)
 
 ## Fixed

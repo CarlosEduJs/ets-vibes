@@ -1,6 +1,6 @@
 [package]
 name = "ets-vibes"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 description = "ETS Vibes - Desktop application"
 repository = "https://github.com/CarlosEduJs/ets-vibes"
