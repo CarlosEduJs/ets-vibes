@@ -54,12 +54,13 @@ tauriConf.version = newVersion;
 writeFileSync(tauri, `${JSON.stringify(tauriConf, null, 2)}\n`);
 
 const date = new Date().toISOString().slice(0, 10);
-const changelogEntry = `\n## ets-vibes@${newVersion} (${date})\n\n${entries.join("\n\n")}\n`;
+const changelogEntry = `## ets-vibes@${newVersion} (${date})\n\n${entries.join("\n\n")}\n`;
 if (existsSync(changelog)) {
   const existing = readFileSync(changelog, "utf-8");
-  writeFileSync(changelog, changelogEntry + existing);
+  const body = existing.replace(/^# Changelog\n+/, "");
+  writeFileSync(changelog, `# Changelog\n\n${changelogEntry}${body}`);
 } else {
-  writeFileSync(changelog, `# Changelog\n${changelogEntry}`);
+  writeFileSync(changelog, `# Changelog\n\n${changelogEntry}`);
 }
 
 mkdirSync(resolve(notesDir, "processed"), { recursive: true });
