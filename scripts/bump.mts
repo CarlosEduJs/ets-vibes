@@ -17,8 +17,8 @@ function bumpSemver(current: string, kind: "major" | "minor" | "patch"): string 
 
 const notes = readdirSync(notesDir).filter(f => f.endsWith(".md") && f !== "README.md");
 if (notes.length === 0) {
-  console.log("No release notes found in release-notes/"); // eslint-disable-line no-console 
-  process.exit(0);
+  console.log("No release notes found in release-notes/");
+  process.exit(1);
 }
 
 let highest: "major" | "minor" | "patch" | null = null;
