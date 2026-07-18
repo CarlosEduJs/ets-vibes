@@ -49,6 +49,10 @@ jobs:
             libssl-dev \
             libxdo-dev
 
+      - name: Install Rust target (macOS x86_64)
+        if: matrix.target == 'x86_64-apple-darwin'
+        run: rustup target add x86_64-apple-darwin
+
       - run: pnpm tauri build --target ${{ matrix.target }}
 
       - name: Upload Tauri bundles to GitHub Release
@@ -56,4 +60,4 @@ jobs:
         run: |
           TAG="${{ fromJson(inputs.plan).announcement_tag }}"
           BUNDLE_DIR="apps/desktop/src-tauri/target/${{ matrix.target }}/release/bundle"
-          find "$BUNDLE_DIR" -type f -exec gh release upload "$TAG" {} + --clobber
+          find "$BUNDLE_DIR" -type f \( -name "*.dmg" -o -name "*.deb" -o -name "*.AppImage" -o -name "*.msi" -o -name "*.exe" -o -name "*.tar.*" \) -exec gh release upload "$TAG" --clobber {} +
