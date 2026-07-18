@@ -74,6 +74,8 @@ jobs:
             libssl-dev \
             libxdo-dev
 
+      - uses: Swatinem/rust-cache@v2
+
       - name: Install Rust target (macOS x86_64)
         if: matrix.target == 'x86_64-apple-darwin'
         run: rustup target add x86_64-apple-darwin
