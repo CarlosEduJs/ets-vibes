@@ -81,6 +81,7 @@ jobs:
       - run: pnpm tauri build --target ${{ matrix.target }}
 
       - name: Upload bundles to Release
+        shell: bash
         run: |
           TAG="${GITHUB_REF_NAME}"
           BUNDLE_DIR="target/${{ matrix.target }}/release/bundle"
