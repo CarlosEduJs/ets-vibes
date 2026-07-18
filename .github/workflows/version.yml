@@ -75,12 +75,10 @@ jobs:
         run: |
           VERSION=$(grep '^version = "' apps/desktop/src-tauri/Cargo.toml | head -1 | sed 's/.*"\(.*\)"/\1/')
           LATEST=$(git tag --list 'v*' --sort=-version:refname | head -1)
-          if [ -z "$LATEST" ]; then
-            echo "No previous tags found, skipping"
-          elif [ "$LATEST" = "v${VERSION}" ]; then
-            echo "Tag v${VERSION} already exists, skipping"
-          else
+          if [ -z "$LATEST" ] || [ "$LATEST" != "v${VERSION}" ]; then
             git tag "v${VERSION}"
             git push origin "v${VERSION}"
             echo "Tagged v${VERSION}"
+          else
+            echo "Tag v${VERSION} already exists, skipping"
           fi
