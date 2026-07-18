@@ -1,6 +1,7 @@
 import { readFileSync, writeFileSync, readdirSync, renameSync, mkdirSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
+import { execSync } from "node:child_process";
 
 const root = resolve(fileURLToPath(dirname(import.meta.url)), "..");
 const cargo = resolve(root, "apps/desktop/src-tauri/Cargo.toml");
@@ -65,5 +66,7 @@ mkdirSync(resolve(notesDir, "processed"), { recursive: true });
 for (const file of notes) {
   renameSync(resolve(notesDir, file), resolve(notesDir, "processed", file));
 }
+
+execSync("cargo generate-lockfile", { stdio: "inherit", cwd: root });
 
 console.log(`Bumped ${currentVersion} → ${newVersion} (${highest})`); // eslint-disable-line no-console
