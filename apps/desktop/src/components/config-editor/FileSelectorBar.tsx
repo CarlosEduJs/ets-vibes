@@ -34,6 +34,7 @@ export function ConfigToolbar({
     <div className="flex flex-wrap items-center gap-3">
       <div className="relative">
         <Input
+          id="config-search"
           type="text"
           placeholder="Search..."
           value={configFilter}

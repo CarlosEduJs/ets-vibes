@@ -366,10 +366,16 @@ export function SaveEditorPage({ readOnly, onStatusChange }: SaveEditorPageProps
           navigateToProfiles();
         }
       }
+      if ((e.key === "s" || e.key === "S") && (e.metaKey || e.ctrlKey)) {
+        if (!readOnly && view.level === "detail") {
+          e.preventDefault();
+          onEdit();
+        }
+      }
     }
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [view.level, deleteTarget, pendingAction, navigateToSaves, navigateToProfiles]);
+  }, [view.level, deleteTarget, pendingAction, navigateToSaves, navigateToProfiles, readOnly, onEdit]);
 
   // --- Render ---
   return (

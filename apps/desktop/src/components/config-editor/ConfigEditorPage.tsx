@@ -135,6 +135,25 @@ export function ConfigEditorPage({ readOnly, onStatusChange }: ConfigEditorPageP
     [configDoc, originalValues, onConfigValueChange],
   );
 
+  // --- Keyboard shortcuts ---
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "s" && (e.metaKey || e.ctrlKey)) {
+        const hasErrors = Object.values(configErrors).some((er) => er !== null);
+        if (!readOnly && !hasErrors) {
+          e.preventDefault();
+          onConfigSave();
+        }
+      }
+      if (e.key === "f" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        document.getElementById("config-search")?.focus();
+      }
+    }
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [readOnly, configErrors, onConfigSave]);
+
   const filteredEntries =
     configDoc?.entries.filter((e) => {
       if (configCategory && e.category !== configCategory) return false;
