@@ -4,6 +4,30 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+catalogs:
+  default:
+    '@types/react':
+      specifier: ^19.1.0
+      version: 19.2.17
+    '@types/react-dom':
+      specifier: ^19.1.0
+      version: 19.2.3
+    lucide-react:
+      specifier: ^1.24.0
+      version: 1.24.0
+    react:
+      specifier: ^19.1.0
+      version: 19.2.7
+    react-dom:
+      specifier: ^19.1.0
+      version: 19.2.7
+    tailwindcss:
+      specifier: ^4
+      version: 4.3.2
+    typescript:
+      specifier: ^7.0.2
+      version: 7.0.2
+
 importers:
 
   .:
@@ -45,6 +69,9 @@ importers:
       '@tauri-apps/api':
         specifier: ^2.11.0
         version: 2.11.1
+      '@tauri-apps/plugin-dialog':
+        specifier: ~2.2.0
+        version: 2.2.2
       '@tauri-apps/plugin-store':
         specifier: ~2.4.3
         version: 2.4.3
@@ -1869,6 +1896,9 @@ packages:
     resolution: {integrity: sha512-R8xGtMpwyetawSqm9kYOuMmEqkhUbvcUy8n0aNXIxollKBLESUu5f4Fx+64hgASYm1H+jSWq6jCW6zqTnH6hqQ==}
     engines: {node: '>= 10'}
     hasBin: true
+
+  '@tauri-apps/plugin-dialog@2.2.2':
+    resolution: {integrity: sha512-Pm9qnXQq8ZVhAMFSEPwxvh+nWb2mk7LASVlNEHYaksHvcz8P6+ElR5U5dNL9Ofrm+uwhh1/gYKWswK8JJJAh6A==}
 
   '@tauri-apps/plugin-store@2.4.3':
     resolution: {integrity: sha512-9LWPj9yMphRi9czEtUv87XHbl1b6xgd9EXpPrUnq6nG7+nbtoF84d4Kwz9xhAv/Hf30sr58pq7EOlyI936y8qw==}
@@ -5161,6 +5191,10 @@ snapshots:
       '@tauri-apps/cli-win32-arm64-msvc': 2.11.4
       '@tauri-apps/cli-win32-ia32-msvc': 2.11.4
       '@tauri-apps/cli-win32-x64-msvc': 2.11.4
+
+  '@tauri-apps/plugin-dialog@2.2.2':
+    dependencies:
+      '@tauri-apps/api': 2.11.1
 
   '@tauri-apps/plugin-store@2.4.3':
     dependencies:

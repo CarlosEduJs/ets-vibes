@@ -31,8 +31,14 @@ impl From<SaveFile> for SaveInfo {
 }
 
 #[tauri::command]
-pub fn list_profiles() -> Result<Vec<ProfileInfo>, String> {
-    let detector = ProfileDetector::new();
+pub fn list_profiles(custom_path: Option<String>) -> Result<Vec<ProfileInfo>, String> {
+    let mut detector = ProfileDetector::new();
+    if let Some(path_str) = custom_path {
+        let trimmed = path_str.trim();
+        if !trimmed.is_empty() {
+            detector.custom_paths.push(PathBuf::from(trimmed));
+        }
+    }
     let profiles = detector.get_profiles();
     Ok(profiles.into_iter().map(ProfileInfo::from).collect())
 }

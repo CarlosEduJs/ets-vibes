@@ -14,6 +14,7 @@ import {
 } from "ui";
 import type { ProfileInfo, SaveInfo, SaveData, EditResult } from "../../types";
 import { useSaveEditorStore } from "../../stores/save-editor";
+import { useSettingsStore } from "../../stores/settings";
 import { BreadcrumbNav } from "./BreadcrumbNav";
 import { ProfileGrid } from "./ProfileGrid";
 import { SaveList } from "./SaveList";
@@ -41,6 +42,7 @@ interface SaveEditorPageProps {
 }
 
 export function SaveEditorPage({ readOnly, onStatusChange }: SaveEditorPageProps) {
+  const customGamePath = useSettingsStore((s) => s.customGamePath);
   const view = useSaveEditorStore((s) => s.view);
   const profiles = useSaveEditorStore((s) => s.profiles);
   const saves = useSaveEditorStore((s) => s.saves);
@@ -79,9 +81,11 @@ export function SaveEditorPage({ readOnly, onStatusChange }: SaveEditorPageProps
       setIsLoading(true);
       onStatusChange("Loading profiles...");
       try {
-        const result = await invoke<ProfileInfo[]>("list_profiles");
+        const result = await invoke<ProfileInfo[]>("list_profiles", {
+          customPath: customGamePath || null,
+        });
         setProfiles(result);
-        const msg = `Found ${result.length} profiles`;
+        const msg = `Found ${result.length} profile${result.length !== 1 ? "s" : ""}`;
         if (showToast) toast.success(msg);
         onStatusChange(msg);
       } catch (e) {
@@ -91,7 +95,7 @@ export function SaveEditorPage({ readOnly, onStatusChange }: SaveEditorPageProps
         setIsLoading(false);
       }
     },
-    [onStatusChange, setProfiles],
+    [customGamePath, onStatusChange, setProfiles],
   );
 
   useEffect(() => {

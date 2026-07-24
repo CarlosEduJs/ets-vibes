@@ -45,6 +45,7 @@ fn hex_decode_name(hex_name: &str) -> Option<String> {
 pub struct ProfileDetector {
     pub games: Vec<&'static GameConfig>,
     pub platform: Platform,
+    pub custom_paths: Vec<PathBuf>,
 }
 
 impl Default for ProfileDetector {
@@ -58,6 +59,7 @@ impl ProfileDetector {
         Self {
             games: all_games().iter().collect(),
             platform: get_current_platform(),
+            custom_paths: Vec::new(),
         }
     }
 
@@ -65,33 +67,44 @@ impl ProfileDetector {
         Self {
             games,
             platform: get_current_platform(),
+            custom_paths: Vec::new(),
         }
     }
 
     pub fn get_profiles(&self) -> Vec<Profile> {
         let mut profiles = Vec::new();
+        let mut seen = std::collections::HashSet::new();
 
         for game in &self.games {
             for path in game.get_paths(self.platform) {
                 let profiles_dir = path.join("profiles");
-                if !profiles_dir.exists() {
-                    continue;
+                if profiles_dir.exists() {
+                    scan_profiles_dir(&profiles_dir, &mut profiles, &mut seen);
                 }
+            }
+        }
 
-                if let Ok(entries) = std::fs::read_dir(&profiles_dir) {
-                    for entry in entries.flatten() {
-                        let profile_path = entry.path();
-                        if profile_path.is_dir() && profile_path.join("profile.sii").exists() {
-                            let name = profile_path
-                                .file_name()
-                                .map(|n| n.to_string_lossy().to_string())
-                                .unwrap_or_default();
-                            profiles.push(Profile {
-                                path: profile_path,
-                                name,
-                            });
-                        }
-                    }
+        for custom_path in &self.custom_paths {
+            if !custom_path.exists() {
+                continue;
+            }
+            let profiles_dir = custom_path.join("profiles");
+            if profiles_dir.exists() && profiles_dir.is_dir() {
+                scan_profiles_dir(&profiles_dir, &mut profiles, &mut seen);
+            }
+
+            if custom_path.is_dir() {
+                scan_profiles_dir(custom_path, &mut profiles, &mut seen);
+
+                if custom_path.join("profile.sii").exists() && seen.insert(custom_path.clone()) {
+                    let name = custom_path
+                        .file_name()
+                        .map(|n| n.to_string_lossy().to_string())
+                        .unwrap_or_default();
+                    profiles.push(Profile {
+                        path: custom_path.clone(),
+                        name,
+                    });
                 }
             }
         }
@@ -121,6 +134,31 @@ impl ProfileDetector {
         }
 
         saves
+    }
+}
+
+fn scan_profiles_dir(
+    dir: &std::path::Path,
+    profiles: &mut Vec<Profile>,
+    seen: &mut std::collections::HashSet<PathBuf>,
+) {
+    if let Ok(entries) = std::fs::read_dir(dir) {
+        for entry in entries.flatten() {
+            let profile_path = entry.path();
+            if profile_path.is_dir()
+                && profile_path.join("profile.sii").exists()
+                && seen.insert(profile_path.clone())
+            {
+                let name = profile_path
+                    .file_name()
+                    .map(|n| n.to_string_lossy().to_string())
+                    .unwrap_or_default();
+                profiles.push(Profile {
+                    path: profile_path,
+                    name,
+                });
+            }
+        }
     }
 }
 
@@ -193,5 +231,34 @@ mod tests {
             sf.game_sii_path,
             PathBuf::from("/profiles/abc/save/autosave/game.sii")
         );
+    }
+
+    #[test]
+    fn test_custom_path_detection_with_profiles_subfolder() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let profiles_dir = temp_dir.path().join("profiles");
+        let prof_dir = profiles_dir.join("437573746f6d");
+        std::fs::create_dir_all(&prof_dir).unwrap();
+        std::fs::write(prof_dir.join("profile.sii"), b"SiiNunit").unwrap();
+
+        let mut detector = ProfileDetector::with_games(vec![]);
+        detector.custom_paths.push(temp_dir.path().to_path_buf());
+
+        let profiles = detector.get_profiles();
+        assert!(profiles.iter().any(|p| p.display_name() == "Custom"));
+    }
+
+    #[test]
+    fn test_custom_path_detection_profiles_folder_directly() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let prof_dir = temp_dir.path().join("54657374");
+        std::fs::create_dir_all(&prof_dir).unwrap();
+        std::fs::write(prof_dir.join("profile.sii"), b"SiiNunit").unwrap();
+
+        let mut detector = ProfileDetector::with_games(vec![]);
+        detector.custom_paths.push(temp_dir.path().to_path_buf());
+
+        let profiles = detector.get_profiles();
+        assert!(profiles.iter().any(|p| p.display_name() == "Test"));
     }
 }

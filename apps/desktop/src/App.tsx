@@ -17,16 +17,22 @@ interface AppVersionInfo {
 }
 
 function App() {
-  const { readOnly, lastTab, setReadOnly, setLastTab } = useSettingsStore();
+  const { readOnly, lastTab, customGamePath, setReadOnly, setLastTab } = useSettingsStore();
   const [tab, setTab] = useState<TabId>(lastTab);
   const [status, setStatus] = useState("");
   const [appInfo, setAppInfo] = useState<AppVersionInfo | null>(null);
 
   useEffect(() => {
-    invoke<AppVersionInfo>("get_app_info")
-      .then(setAppInfo)
+    let active = true;
+    invoke<AppVersionInfo>("get_app_info", { customPath: customGamePath || null })
+      .then((info) => {
+        if (active) setAppInfo(info);
+      })
       .catch(() => {});
-  }, []);
+    return () => {
+      active = false;
+    };
+  }, [customGamePath]);
 
   function handleTabChange(newTab: TabId) {
     setTab(newTab);

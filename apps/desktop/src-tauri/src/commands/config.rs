@@ -17,8 +17,12 @@ pub struct AppVersionInfo {
 }
 
 #[tauri::command]
-pub fn get_app_info() -> Result<AppVersionInfo, String> {
-    let (game_version, compatibility_warning) = super::helpers::read_game_version();
+pub fn get_app_info(custom_path: Option<String>) -> Result<AppVersionInfo, String> {
+    let custom_p = custom_path
+        .as_deref()
+        .filter(|s| !s.trim().is_empty())
+        .map(Path::new);
+    let (game_version, compatibility_warning) = super::helpers::read_game_version(custom_p);
     Ok(AppVersionInfo {
         app_version: APP_VERSION.to_string(),
         game_version,
@@ -28,8 +32,12 @@ pub fn get_app_info() -> Result<AppVersionInfo, String> {
 }
 
 #[tauri::command]
-pub fn list_configs() -> Result<Vec<String>, String> {
-    let configs = crate::core::detection::find_config_files();
+pub fn list_configs(custom_path: Option<String>) -> Result<Vec<String>, String> {
+    let custom_p = custom_path
+        .as_deref()
+        .filter(|s| !s.trim().is_empty())
+        .map(Path::new);
+    let configs = crate::core::detection::find_config_files(custom_p);
     Ok(configs
         .into_iter()
         .map(|p| p.to_string_lossy().to_string())

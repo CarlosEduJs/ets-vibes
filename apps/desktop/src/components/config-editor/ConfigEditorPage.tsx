@@ -7,6 +7,8 @@ import { CONFIG_DESCRIPTIONS } from "../../config-descriptions";
 import { ConfigToolbar } from "./FileSelectorBar";
 import { ConfigTable, formatKeyName } from "./ConfigTable";
 
+import { useSettingsStore } from "../../stores/settings";
+
 interface ConfigEditorPageProps {
   readOnly: boolean;
   onStatusChange: (message: string) => void;
@@ -38,6 +40,7 @@ function validateValue(value: string, type: ConfigValueType): string | null {
 }
 
 export function ConfigEditorPage({ readOnly, onStatusChange }: ConfigEditorPageProps) {
+  const customGamePath = useSettingsStore((s) => s.customGamePath);
   const [configPaths, setConfigPaths] = useState<string[]>([]);
   const [selectedConfig, setSelectedConfig] = useState<string | null>(null);
   const [configDoc, setConfigDoc] = useState<ConfigDocument | null>(null);
@@ -48,7 +51,7 @@ export function ConfigEditorPage({ readOnly, onStatusChange }: ConfigEditorPageP
   const [loading, setLoading] = useState(true);
 
   const selectConfig = useCallback(
-    async (path: string) => {
+    async (path: string, activeRef?: { current: boolean }) => {
       setSelectedConfig(path);
       setConfigDoc(null);
       setConfigFilter("");
@@ -57,6 +60,7 @@ export function ConfigEditorPage({ readOnly, onStatusChange }: ConfigEditorPageP
       onStatusChange("Loading config...");
       try {
         const result = await invoke<ConfigDocument>("load_config", { path });
+        if (activeRef && !activeRef.current) return;
         setConfigDoc(result);
         const originals: Record<string, string> = {};
         for (const e of result.entries) originals[e.key] = e.value;
@@ -64,6 +68,7 @@ export function ConfigEditorPage({ readOnly, onStatusChange }: ConfigEditorPageP
         const msg = `Loaded ${result.entries.length} entries`;
         onStatusChange(msg);
       } catch (e) {
+        if (activeRef && !activeRef.current) return;
         toast.error(String(e));
         onStatusChange(`Error: ${e}`);
       }
@@ -72,28 +77,54 @@ export function ConfigEditorPage({ readOnly, onStatusChange }: ConfigEditorPageP
   );
 
   useEffect(() => {
+    let active = true;
+    const activeRef = { current: true };
+
     async function init() {
       setLoading(true);
+      setSelectedConfig(null);
+      setConfigDoc(null);
+      setConfigFilter("");
+      setConfigCategory("");
+      setConfigErrors({});
+      setOriginalValues({});
+      setConfigPaths([]);
       onStatusChange("Searching config files...");
+
       try {
-        const paths = await invoke<string[]>("list_configs");
+        const paths = await invoke<string[]>("list_configs", {
+          customPath: customGamePath || null,
+        });
+
+        if (!active) return;
         setConfigPaths(paths);
+
         if (paths.length > 0) {
           const firstPath = paths[0];
           if (firstPath != null) {
-            await selectConfig(firstPath);
+            await selectConfig(firstPath, activeRef);
           }
         } else {
           onStatusChange("No config files found");
         }
       } catch (e) {
+        if (!active) return;
         toast.error(String(e));
         onStatusChange(`Error: ${e}`);
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
       }
-      setLoading(false);
     }
+
     init();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+    return () => {
+      active = false;
+      activeRef.current = false;
+    };
+  }, [customGamePath, onStatusChange, selectConfig]);
 
   const onConfigSave = useCallback(async () => {
     if (!selectedConfig || !configDoc) return;

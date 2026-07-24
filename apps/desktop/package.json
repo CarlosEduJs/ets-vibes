@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@tauri-apps/api": "^2.11.0",
+    "@tauri-apps/plugin-dialog": "~2.2.0",
     "@tauri-apps/plugin-store": "~2.4.3",
     "lucide-react": "catalog:",
     "react": "catalog:",

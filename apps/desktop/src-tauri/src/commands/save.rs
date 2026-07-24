@@ -67,7 +67,18 @@ pub fn load_save(game_sii_path: String) -> Result<SaveData, String> {
     let save_path = Path::new(&game_sii_path).parent().unwrap_or(Path::new(""));
     let (save_version, file_time, mods) = read_info_sii(save_path);
 
-    let (game_version, compatibility_warning) = super::helpers::read_game_version();
+    let mut custom_config_path = None;
+    let mut curr = Some(save_path);
+    while let Some(dir) = curr {
+        if dir.join("config.cfg").exists() {
+            custom_config_path = Some(dir);
+            break;
+        }
+        curr = dir.parent();
+    }
+
+    let (game_version, compatibility_warning) =
+        super::helpers::read_game_version(custom_config_path);
 
     Ok(SaveData {
         money,

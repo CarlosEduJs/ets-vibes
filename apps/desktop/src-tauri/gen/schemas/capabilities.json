@@ -1,9 +1,1 @@
-{
-  "default": {
-    "identifier": "default",
-    "description": "Default permissions for ETS Vibes",
-    "local": true,
-    "windows": ["main"],
-    "permissions": ["core:default", "opener:default", "store:default"]
-  }
-}
+{"default":{"identifier":"default","description":"Default permissions for ETS Vibes","local":true,"windows":["main"],"permissions":["core:default","opener:default","store:default","dialog:allow-open"]}}

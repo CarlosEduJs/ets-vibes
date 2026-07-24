@@ -3,5 +3,5 @@
   "identifier": "default",
   "description": "Default permissions for ETS Vibes",
   "windows": ["main"],
-  "permissions": ["core:default", "opener:default", "store:default"]
+  "permissions": ["core:default", "opener:default", "store:default", "dialog:allow-open"]
 }
