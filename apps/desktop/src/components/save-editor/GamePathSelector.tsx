@@ -1,19 +1,17 @@
 import { useState, useCallback } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
-import { Button, Input } from "ui";
+import { Button, Input, toast } from "ui";
 import { Folder, FolderSearch, RotateCcw, Check, X, HardDrive } from "lucide-react";
 
 interface GamePathSelectorProps {
   customPath: string;
   onPathChange: (path: string) => void;
-  onRefresh: () => void;
   compact?: boolean;
 }
 
 export function GamePathSelector({
   customPath,
   onPathChange,
-  onRefresh,
   compact = false,
 }: GamePathSelectorProps) {
   const [isEditing, setIsEditing] = useState(false);
@@ -30,26 +28,23 @@ export function GamePathSelector({
         onPathChange(selected);
         setInputVal(selected);
         setIsEditing(false);
-        onRefresh();
       }
     } catch (e) {
-      console.warn("Failed to open directory picker:", e);
+      toast.error(`Failed to open directory picker: ${e}`);
     }
-  }, [onPathChange, onRefresh]);
+  }, [onPathChange]);
 
   const handleSaveInput = useCallback(() => {
     const trimmed = inputVal.trim();
     onPathChange(trimmed);
     setIsEditing(false);
-    onRefresh();
-  }, [inputVal, onPathChange, onRefresh]);
+  }, [inputVal, onPathChange]);
 
   const handleReset = useCallback(() => {
     onPathChange("");
     setInputVal("");
     setIsEditing(false);
-    onRefresh();
-  }, [onPathChange, onRefresh]);
+  }, [onPathChange]);
 
   if (compact) {
     return (
@@ -124,6 +119,7 @@ export function GamePathSelector({
           <Button
             variant="ghost"
             size="sm"
+            aria-label="Cancel manual path editing"
             onClick={() => {
               setInputVal(customPath);
               setIsEditing(false);

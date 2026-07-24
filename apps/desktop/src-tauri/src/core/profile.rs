@@ -241,7 +241,7 @@ mod tests {
         std::fs::create_dir_all(&prof_dir).unwrap();
         std::fs::write(prof_dir.join("profile.sii"), b"SiiNunit").unwrap();
 
-        let mut detector = ProfileDetector::new();
+        let mut detector = ProfileDetector::with_games(vec![]);
         detector.custom_paths.push(temp_dir.path().to_path_buf());
 
         let profiles = detector.get_profiles();
@@ -255,7 +255,7 @@ mod tests {
         std::fs::create_dir_all(&prof_dir).unwrap();
         std::fs::write(prof_dir.join("profile.sii"), b"SiiNunit").unwrap();
 
-        let mut detector = ProfileDetector::new();
+        let mut detector = ProfileDetector::with_games(vec![]);
         detector.custom_paths.push(temp_dir.path().to_path_buf());
 
         let profiles = detector.get_profiles();

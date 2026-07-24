@@ -23,9 +23,15 @@ function App() {
   const [appInfo, setAppInfo] = useState<AppVersionInfo | null>(null);
 
   useEffect(() => {
+    let active = true;
     invoke<AppVersionInfo>("get_app_info", { customPath: customGamePath || null })
-      .then(setAppInfo)
+      .then((info) => {
+        if (active) setAppInfo(info);
+      })
       .catch(() => {});
+    return () => {
+      active = false;
+    };
   }, [customGamePath]);
 
   function handleTabChange(newTab: TabId) {

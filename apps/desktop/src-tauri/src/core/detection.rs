@@ -163,15 +163,6 @@ pub fn find_config_files(custom_path: Option<&std::path::Path>) -> Vec<PathBuf> 
     let mut configs = Vec::new();
     let mut seen = std::collections::HashSet::new();
 
-    for game in SUPPORTED_GAMES {
-        for path in game.get_paths(platform) {
-            let config = path.join("config.cfg");
-            if config.exists() && seen.insert(config.clone()) {
-                configs.push(config);
-            }
-        }
-    }
-
     if let Some(cp) = custom_path {
         if cp.exists() {
             let candidate1 = cp.join("config.cfg");
@@ -183,6 +174,15 @@ pub fn find_config_files(custom_path: Option<&std::path::Path>) -> Vec<PathBuf> 
                 if candidate2.exists() && seen.insert(candidate2.clone()) {
                     configs.push(candidate2);
                 }
+            }
+        }
+    }
+
+    for game in SUPPORTED_GAMES {
+        for path in game.get_paths(platform) {
+            let config = path.join("config.cfg");
+            if config.exists() && seen.insert(config.clone()) {
+                configs.push(config);
             }
         }
     }

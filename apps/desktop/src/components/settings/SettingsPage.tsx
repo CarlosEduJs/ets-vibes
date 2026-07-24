@@ -84,11 +84,7 @@ export function SettingsPage({ appInfo }: SettingsPageProps) {
           <Folder className="h-4 w-4" />
           Game Directory
         </CardTitle>
-        <GamePathSelector
-          customPath={customGamePath}
-          onPathChange={setCustomGamePath}
-          onRefresh={() => {}}
-        />
+        <GamePathSelector customPath={customGamePath} onPathChange={setCustomGamePath} />
       </section>
 
       <Separator />

@@ -44,11 +44,7 @@ export function ProfileGrid({
 
   return (
     <div className="space-y-4">
-      <GamePathSelector
-        customPath={customGamePath}
-        onPathChange={setCustomGamePath}
-        onRefresh={onLoadProfiles}
-      />
+      <GamePathSelector customPath={customGamePath} onPathChange={setCustomGamePath} />
 
       <div className="flex items-center justify-between">
         <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
