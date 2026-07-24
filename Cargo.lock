@@ -1023,7 +1023,7 @@ dependencies = [
 
 [[package]]
 name = "ets-vibes"
-version = "0.1.3"
+version = "0.2.0"
 dependencies = [
  "aes",
  "anyhow",
@@ -3669,7 +3669,7 @@ dependencies = [
  "tauri",
  "tauri-plugin",
  "tauri-plugin-fs",
- "thiserror 2.0.18",
+ "thiserror 2.0.19",
  "url",
 ]
 
@@ -3692,7 +3692,7 @@ dependencies = [
  "tauri",
  "tauri-plugin",
  "tauri-utils",
- "thiserror 2.0.18",
+ "thiserror 2.0.19",
  "toml 1.1.3+spec-1.1.0",
  "url",
 ]
