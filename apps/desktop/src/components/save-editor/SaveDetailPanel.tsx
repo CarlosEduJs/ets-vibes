@@ -58,8 +58,7 @@ export function SaveDetailPanel({
   const [pendingTab, setPendingTab] = useState<string | null>(null);
 
   const isDirty =
-    moneyInput !== (saveData.money_account ?? "") ||
-    xpInput !== (saveData.experience_points ?? "");
+    moneyInput !== (saveData.money_account ?? "") || xpInput !== (saveData.experience_points ?? "");
 
   const handleTabChange = useCallback(
     (value: string) => {
@@ -127,10 +126,7 @@ export function SaveDetailPanel({
         </TabsContent>
       </Tabs>
 
-      <AlertDialog
-        open={pendingTab !== null}
-        onOpenChange={(open) => !open && setPendingTab(null)}
-      >
+      <AlertDialog open={pendingTab !== null} onOpenChange={(open) => !open && setPendingTab(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Unsaved changes</AlertDialogTitle>
@@ -140,9 +136,7 @@ export function SaveDetailPanel({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Stay on Edit</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmTabChange}>
-              Discard changes
-            </AlertDialogAction>
+            <AlertDialogAction onClick={confirmTabChange}>Discard changes</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

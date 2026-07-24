@@ -366,10 +366,24 @@ export function SaveEditorPage({ readOnly, onStatusChange }: SaveEditorPageProps
           navigateToProfiles();
         }
       }
+      if ((e.key === "s" || e.key === "S") && (e.metaKey || e.ctrlKey)) {
+        if (!readOnly && view.level === "detail") {
+          e.preventDefault();
+          onEdit();
+        }
+      }
     }
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [view.level, deleteTarget, pendingAction, navigateToSaves, navigateToProfiles]);
+  }, [
+    view.level,
+    deleteTarget,
+    pendingAction,
+    navigateToSaves,
+    navigateToProfiles,
+    readOnly,
+    onEdit,
+  ]);
 
   // --- Render ---
   return (
@@ -397,7 +411,8 @@ export function SaveEditorPage({ readOnly, onStatusChange }: SaveEditorPageProps
         <div>
           <div className="mb-4 flex items-center justify-between">
             <p className="text-sm text-muted-foreground">
-              Showing saves for <span className="font-medium text-foreground">{view.profile.display_name}</span>
+              Showing saves for{" "}
+              <span className="font-medium text-foreground">{view.profile.display_name}</span>
             </p>
             <Button variant="destructive" size="sm" onClick={onProfileDelete} disabled={readOnly}>
               Delete Profile

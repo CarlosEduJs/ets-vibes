@@ -23,6 +23,7 @@ export * from "./components/ui/slider";
 export * from "./components/ui/dropdown-menu";
 export * from "./components/ui/popover";
 export * from "./components/ui/badge";
+export * from "./components/ui/kbd";
 
 export { ThemeProvider, useTheme } from "./components/theme-provider";
 export { toast } from "sonner";

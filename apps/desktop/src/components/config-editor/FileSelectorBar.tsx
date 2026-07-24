@@ -1,4 +1,4 @@
-import { Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "ui";
+import { Input, Kbd, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "ui";
 
 interface ConfigToolbarProps {
   configFilter: string;
@@ -34,13 +34,15 @@ export function ConfigToolbar({
     <div className="flex flex-wrap items-center gap-3">
       <div className="relative">
         <Input
+          id="config-search"
           type="text"
           placeholder="Search..."
           value={configFilter}
           onChange={(e) => onFilterChange(e.target.value)}
-          className="w-48"
+          className="w-56 pr-14"
+          aria-keyshortcuts="Control+F"
         />
-        {configFilter && (
+        {configFilter ? (
           <button
             type="button"
             onClick={() => onFilterChange("")}
@@ -49,6 +51,10 @@ export function ConfigToolbar({
           >
             ✕
           </button>
+        ) : (
+          <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
+            <Kbd className="text-[10px]">Ctrl+F</Kbd>
+          </div>
         )}
       </div>
 

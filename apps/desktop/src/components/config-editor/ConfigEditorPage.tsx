@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { Button, toast } from "ui";
+import { Button, Kbd, toast } from "ui";
 import * as v from "valibot";
 import type { ConfigDocument, ConfigValueType, EditResult } from "../../types";
 import { CONFIG_DESCRIPTIONS } from "../../config-descriptions";
@@ -135,6 +135,29 @@ export function ConfigEditorPage({ readOnly, onStatusChange }: ConfigEditorPageP
     [configDoc, originalValues, onConfigValueChange],
   );
 
+  // --- Keyboard shortcuts ---
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "s" && (e.metaKey || e.ctrlKey)) {
+        const hasErrors = Object.values(configErrors).some((er) => er !== null);
+        if (!readOnly && !hasErrors) {
+          e.preventDefault();
+          onConfigSave();
+        }
+      }
+      if (e.key === "f" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        const searchInput = document.getElementById("config-search") as HTMLInputElement | null;
+        if (searchInput) {
+          searchInput.focus();
+          searchInput.select();
+        }
+      }
+    }
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [readOnly, configErrors, onConfigSave]);
+
   const filteredEntries =
     configDoc?.entries.filter((e) => {
       if (configCategory && e.category !== configCategory) return false;
@@ -179,8 +202,11 @@ export function ConfigEditorPage({ readOnly, onStatusChange }: ConfigEditorPageP
           size="sm"
           onClick={onConfigSave}
           disabled={readOnly || Object.values(configErrors).some((e) => e !== null)}
+          aria-keyshortcuts="Control+S"
+          className="gap-2"
         >
-          Save Config
+          <span>Save Config</span>
+          <Kbd className="bg-primary-foreground/20 text-primary-foreground text-[10px]">Ctrl+S</Kbd>
         </Button>
       </div>
 

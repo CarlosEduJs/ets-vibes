@@ -37,6 +37,7 @@ Clippy is very strict: `unwrap_used`, `expect_used`, `todo`, `dbg_macro`, `print
 ## JS/TS linting
 
 oxlint (no eslint). Key rules:
+
 - `no-console`: warn
 - `no-non-null-assertion`: warn
 - `consistent-type-imports`: prefer inline `type` imports

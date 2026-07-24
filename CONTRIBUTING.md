@@ -42,12 +42,12 @@ The app follows a **layered architecture**:
 
 ## Stack
 
-| Layer | Tech |
-|-------|------|
+| Layer    | Tech                                              |
+| -------- | ------------------------------------------------- |
 | Frontend | React 19, TypeScript 7, TailwindCSS v4, shadcn/ui |
-| Backend | Rust, Tauri v2 |
-| Build | pnpm workspace, Vite, Cargo |
-| Tooling | oxlint/oxfmt, `tsc --noEmit` |
+| Backend  | Rust, Tauri v2                                    |
+| Build    | pnpm workspace, Vite, Cargo                       |
+| Tooling  | oxlint/oxfmt, `tsc --noEmit`                      |
 
 ## Getting started
 

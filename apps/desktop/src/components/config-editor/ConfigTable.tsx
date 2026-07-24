@@ -213,7 +213,10 @@ export function ConfigTable({
             const description = descriptions[e.key];
 
             return (
-              <TableRow key={e.key} className={isModified ? "bg-amber-50 dark:bg-amber-950/20" : ""}>
+              <TableRow
+                key={e.key}
+                className={isModified ? "bg-amber-50 dark:bg-amber-950/20" : ""}
+              >
                 <TableCell className="text-xs text-foreground">{formatKeyName(e.key)}</TableCell>
                 <TableCell>
                   <ValueCell
