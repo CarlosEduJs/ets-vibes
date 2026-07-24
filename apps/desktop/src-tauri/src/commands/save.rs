@@ -67,7 +67,8 @@ pub fn load_save(game_sii_path: String) -> Result<SaveData, String> {
     let save_path = Path::new(&game_sii_path).parent().unwrap_or(Path::new(""));
     let (save_version, file_time, mods) = read_info_sii(save_path);
 
-    let (game_version, compatibility_warning) = super::helpers::read_game_version();
+    let (game_version, compatibility_warning) =
+        super::helpers::read_game_version(save_path.parent());
 
     Ok(SaveData {
         money,

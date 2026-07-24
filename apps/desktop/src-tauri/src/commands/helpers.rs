@@ -102,8 +102,8 @@ pub fn read_info_sii(save_path: &Path) -> (Option<u32>, Option<i64>, Vec<String>
 }
 
 /// Read game version from config.cfg, returning (version_string, warning).
-pub fn read_game_version() -> (Option<String>, Option<String>) {
-    let configs = find_config_files();
+pub fn read_game_version(custom_path: Option<&Path>) -> (Option<String>, Option<String>) {
+    let configs = find_config_files(custom_path);
     for path in &configs {
         let content = match std::fs::read_to_string(path) {
             Ok(c) => c,

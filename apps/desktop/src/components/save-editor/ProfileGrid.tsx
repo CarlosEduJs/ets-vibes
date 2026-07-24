@@ -12,7 +12,9 @@ import {
   EmptyContent,
   EmptyMedia,
 } from "ui";
-import { ChevronRight, Loader2 } from "lucide-react";
+import { ChevronRight, Loader2, RefreshCw } from "lucide-react";
+import { GamePathSelector } from "./GamePathSelector";
+import { useSettingsStore } from "../../stores/settings";
 
 interface ProfileGridProps {
   profiles: ProfileInfo[];
@@ -29,6 +31,8 @@ export function ProfileGrid({
   onSelectProfile,
   onLoadProfiles,
 }: ProfileGridProps) {
+  const { customGamePath, setCustomGamePath } = useSettingsStore();
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-3">
@@ -39,22 +43,38 @@ export function ProfileGrid({
   }
 
   return (
-    <div>
-      <div className="mb-4 flex items-center justify-end">
-        <Button variant="outline" size="sm" onClick={onLoadProfiles}>
-          Reload
+    <div className="space-y-4">
+      <GamePathSelector
+        customPath={customGamePath}
+        onPathChange={setCustomGamePath}
+        onRefresh={onLoadProfiles}
+      />
+
+      <div className="flex items-center justify-between">
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          Profiles ({profiles.length})
+        </h3>
+        <Button variant="outline" size="sm" onClick={onLoadProfiles} className="gap-1.5 text-xs">
+          <RefreshCw className="h-3.5 w-3.5" />
+          Reload Profiles
         </Button>
       </div>
+
       {profiles.length === 0 ? (
-        <Empty>
+        <Empty className="py-12 border border-dashed border-border/60 rounded-xl bg-card/40">
           <EmptyHeader>
             <EmptyMedia />
             <EmptyTitle>No profiles found</EmptyTitle>
-            <EmptyDescription>Click the button below to reload the profiles.</EmptyDescription>
+            <EmptyDescription className="max-w-md">
+              No profiles detected in default game folders. If your game is on another drive (e.g.
+              D: drive) or custom folder, use the directory selector above to specify your game or
+              profiles location.
+            </EmptyDescription>
           </EmptyHeader>
           <EmptyContent>
-            <Button variant="outline" size="sm" onClick={onLoadProfiles}>
-              Reload
+            <Button variant="outline" size="sm" onClick={onLoadProfiles} className="gap-1.5">
+              <RefreshCw className="h-3.5 w-3.5" />
+              Reload Profiles
             </Button>
           </EmptyContent>
         </Empty>

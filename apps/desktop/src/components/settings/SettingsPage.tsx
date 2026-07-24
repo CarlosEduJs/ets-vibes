@@ -1,6 +1,7 @@
 import { Card, CardTitle, CardContent, Separator, Switch, FieldLabel, Button, useTheme } from "ui";
-import { Sun, Moon, Monitor, ExternalLink, Bug } from "lucide-react";
+import { Sun, Moon, Monitor, ExternalLink, Bug, Folder } from "lucide-react";
 import { useSettingsStore } from "../../stores/settings";
+import { GamePathSelector } from "../save-editor/GamePathSelector";
 
 interface AppVersionInfo {
   app_version: string;
@@ -21,10 +22,10 @@ const THEME_OPTIONS = [
 
 export function SettingsPage({ appInfo }: SettingsPageProps) {
   const { theme, setTheme } = useTheme();
-  const { readOnly, setReadOnly } = useSettingsStore();
+  const { readOnly, setReadOnly, customGamePath, setCustomGamePath } = useSettingsStore();
 
   return (
-    <div className="mx-auto max-w-xl space-y-8 py-4">
+    <div className="mx-auto max-w-xl space-y-8 py-4 overflow-y-auto h-full">
       {/* Appearance */}
       <section>
         <CardTitle className="mb-3 flex items-center gap-2 text-base">
@@ -74,6 +75,20 @@ export function SettingsPage({ appInfo }: SettingsPageProps) {
             </div>
           </CardContent>
         </Card>
+      </section>
+
+      <Separator />
+
+      <section>
+        <CardTitle className="mb-3 flex items-center gap-2 text-base">
+          <Folder className="h-4 w-4" />
+          Game Directory
+        </CardTitle>
+        <GamePathSelector
+          customPath={customGamePath}
+          onPathChange={setCustomGamePath}
+          onRefresh={() => {}}
+        />
       </section>
 
       <Separator />

@@ -7,6 +7,8 @@ import { CONFIG_DESCRIPTIONS } from "../../config-descriptions";
 import { ConfigToolbar } from "./FileSelectorBar";
 import { ConfigTable, formatKeyName } from "./ConfigTable";
 
+import { useSettingsStore } from "../../stores/settings";
+
 interface ConfigEditorPageProps {
   readOnly: boolean;
   onStatusChange: (message: string) => void;
@@ -38,6 +40,7 @@ function validateValue(value: string, type: ConfigValueType): string | null {
 }
 
 export function ConfigEditorPage({ readOnly, onStatusChange }: ConfigEditorPageProps) {
+  const customGamePath = useSettingsStore((s) => s.customGamePath);
   const [configPaths, setConfigPaths] = useState<string[]>([]);
   const [selectedConfig, setSelectedConfig] = useState<string | null>(null);
   const [configDoc, setConfigDoc] = useState<ConfigDocument | null>(null);
@@ -76,7 +79,9 @@ export function ConfigEditorPage({ readOnly, onStatusChange }: ConfigEditorPageP
       setLoading(true);
       onStatusChange("Searching config files...");
       try {
-        const paths = await invoke<string[]>("list_configs");
+        const paths = await invoke<string[]>("list_configs", {
+          customPath: customGamePath || null,
+        });
         setConfigPaths(paths);
         if (paths.length > 0) {
           const firstPath = paths[0];
@@ -93,7 +98,7 @@ export function ConfigEditorPage({ readOnly, onStatusChange }: ConfigEditorPageP
       setLoading(false);
     }
     init();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [customGamePath]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const onConfigSave = useCallback(async () => {
     if (!selectedConfig || !configDoc) return;
