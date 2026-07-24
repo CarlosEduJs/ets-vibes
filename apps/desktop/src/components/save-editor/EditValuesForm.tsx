@@ -1,4 +1,4 @@
-import { Button, Input, Label } from "ui";
+import { Button, Input, Kbd, Label } from "ui";
 
 interface EditValuesFormProps {
   moneyInput: string;
@@ -54,8 +54,15 @@ export function EditValuesForm({
             className="w-48"
           />
         </div>
-        <Button type="submit" disabled={readOnly} size="sm">
-          Save Changes
+        <Button
+          type="submit"
+          disabled={readOnly}
+          size="sm"
+          aria-keyshortcuts="Control+S"
+          className="gap-2"
+        >
+          <span>Save Changes</span>
+          <Kbd className="bg-primary-foreground/20 text-primary-foreground text-[10px]">Ctrl+S</Kbd>
         </Button>
       </div>
     </form>

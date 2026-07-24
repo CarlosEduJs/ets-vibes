@@ -1,5 +1,6 @@
 import { FieldLabel, Switch } from "ui";
 import { TabBar, type TabId } from "./TabBar";
+import { KeyboardShortcutsDialog } from "./KeyboardShortcutsDialog";
 
 const logoSrc = "/logo.svg";
 
@@ -32,13 +33,15 @@ export function Header({
         {appInfo && <span className="text-xs text-muted-foreground">v{appInfo.app_version}</span>}
       </div>
       <TabBar activeTab={activeTab} onTabChange={onTabChange} />
-      {activeTab !== "settings" && (
-        <div className="flex items-center gap-2">
-          <Switch id="readonly-switch" checked={readOnly} onCheckedChange={onToggleReadOnly} />
-          <FieldLabel htmlFor="readonly-switch">Read Only</FieldLabel>
-        </div>
-      )}
-      {activeTab === "settings" && <div className="w-[106px]" />}
+      <div className="flex items-center gap-4">
+        {activeTab !== "settings" && (
+          <div className="flex items-center gap-2">
+            <Switch id="readonly-switch" checked={readOnly} onCheckedChange={onToggleReadOnly} />
+            <FieldLabel htmlFor="readonly-switch">Read Only</FieldLabel>
+          </div>
+        )}
+        <KeyboardShortcutsDialog />
+      </div>
     </header>
   );
 }

@@ -1,4 +1,11 @@
-import { readFileSync, writeFileSync, readdirSync, renameSync, mkdirSync, existsSync } from "node:fs";
+import {
+  readFileSync,
+  writeFileSync,
+  readdirSync,
+  renameSync,
+  mkdirSync,
+  existsSync,
+} from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
 import { execSync } from "node:child_process";
@@ -12,11 +19,11 @@ const notesDir = resolve(root, "release-notes");
 function bumpSemver(current: string, kind: "major" | "minor" | "patch"): string {
   const [major = 0, minor = 0, patch = 0] = current.split(".").map(Number);
   if (kind === "major") return `${major + 1}.0.0`;
-  if (kind === "minor") return `${major}.${ minor + 1}.0`;
+  if (kind === "minor") return `${major}.${minor + 1}.0`;
   return `${major}.${minor}.${patch + 1}`;
 }
 
-const notes = readdirSync(notesDir).filter(f => f.endsWith(".md") && f !== "README.md");
+const notes = readdirSync(notesDir).filter((f) => f.endsWith(".md") && f !== "README.md");
 if (notes.length === 0) {
   console.log("No release notes found in release-notes/");
   process.exit(0);
@@ -29,7 +36,12 @@ for (const file of notes) {
   const bumpMatch = content.match(/^---\n\s*bump:\s*(major|minor|patch)\s*\n---\n/);
   if (bumpMatch) {
     const b = bumpMatch[1] as "major" | "minor" | "patch";
-    if (!highest || (b === "major") || (b === "minor" && highest !== "major") || (b === "patch" && highest === null)) {
+    if (
+      !highest ||
+      b === "major" ||
+      (b === "minor" && highest !== "major") ||
+      (b === "patch" && highest === null)
+    ) {
       highest = b;
     }
   }
@@ -41,7 +53,10 @@ if (!highest) highest = "patch";
 
 const cargoContent = readFileSync(cargo, "utf-8");
 const currentVersion = cargoContent.match(/^version = "(.+)"/m)?.[1];
-if (!currentVersion) { console.error("Could not read version from Cargo.toml"); process.exit(1); } // eslint-disable-line no-console
+if (!currentVersion) {
+  console.error("Could not read version from Cargo.toml");
+  process.exit(1);
+} // eslint-disable-line no-console
 
 const newVersion = bumpSemver(currentVersion, highest);
 const versionLine = `version = "${currentVersion}"`;
