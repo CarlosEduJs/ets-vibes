@@ -1,5 +1,10 @@
 # Changelog
 
+## ets-vibes@0.1.3 (2026-07-24)
+
+### Added
+
+- Keyboard shortcuts: Ctrl+S / Cmd+S to save (config editor and save editor), Ctrl+F / Cmd+F to focus search (config editor).
 ## ets-vibes@0.1.2 (2026-07-18)
 
 ### Changed
