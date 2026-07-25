@@ -10,14 +10,17 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  Empty,
+  EmptyTitle,
+  EmptyHeader,
+  EmptyDescription,
+  EmptyContent,
+  EmptyMedia,
   toast,
 } from "ui";
-import type { ProfileInfo, SaveInfo, SaveData, EditResult } from "../../types";
+import { Loader2, Save, Trash2 } from "lucide-react";
+import type { SaveData, EditResult } from "../../types";
 import { useSaveEditorStore } from "../../stores/save-editor";
-import { useSettingsStore } from "../../stores/settings";
-import { BreadcrumbNav } from "./BreadcrumbNav";
-import { ProfileGrid } from "./ProfileGrid";
-import { SaveList } from "./SaveList";
 import { SaveDetailPanel } from "./SaveDetailPanel";
 
 type QuickAction = "unlock" | "maxSkills" | "repair" | "refuel";
@@ -39,101 +42,29 @@ const QUICK_ACTION_NAMES: Record<QuickAction, string> = {
 interface SaveEditorPageProps {
   readOnly: boolean;
   onStatusChange: (message: string) => void;
+  onReloadSaves?: () => void;
+  onReloadProfiles?: () => void;
 }
 
-export function SaveEditorPage({ readOnly, onStatusChange }: SaveEditorPageProps) {
-  const customGamePath = useSettingsStore((s) => s.customGamePath);
-  const view = useSaveEditorStore((s) => s.view);
-  const profiles = useSaveEditorStore((s) => s.profiles);
-  const saves = useSaveEditorStore((s) => s.saves);
+export function SaveEditorPage({
+  readOnly,
+  onStatusChange,
+  onReloadSaves,
+  onReloadProfiles,
+}: SaveEditorPageProps) {
+  const selectedProfile = useSaveEditorStore((s) => s.selectedProfile);
+  const selectedSave = useSaveEditorStore((s) => s.selectedSave);
   const saveData = useSaveEditorStore((s) => s.saveData);
   const moneyInput = useSaveEditorStore((s) => s.moneyInput);
   const xpInput = useSaveEditorStore((s) => s.xpInput);
-  const {
-    setView,
-    resetToProfiles,
-    setProfiles,
-    setSaves,
-    setSaveData,
-    setMoneyInput,
-    setXpInput,
-  } = useSaveEditorStore();
+  const { setSaveData, setMoneyInput, setXpInput, setSelectedSave } = useSaveEditorStore();
 
   const [deleteTarget, setDeleteTarget] = useState<"save" | "profile" | null>(null);
   const [pendingAction, setPendingAction] = useState<QuickAction | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // --- Navigation ---
-  const navigateToProfiles = useCallback(() => {
-    resetToProfiles();
-  }, [resetToProfiles]);
-
-  const navigateToSaves = useCallback(() => {
-    if (view.level === "detail") {
-      setView({ level: "saves", profile: view.profile });
-      setSaveData(null);
-    }
-  }, [view, setView, setSaveData]);
-
-  // --- Profile ---
-  const loadProfiles = useCallback(
-    async (showToast = false) => {
-      setIsLoading(true);
-      onStatusChange("Loading profiles...");
-      try {
-        const result = await invoke<ProfileInfo[]>("list_profiles", {
-          customPath: customGamePath || null,
-        });
-        setProfiles(result);
-        const msg = `Found ${result.length} profile${result.length !== 1 ? "s" : ""}`;
-        if (showToast) toast.success(msg);
-        onStatusChange(msg);
-      } catch (e) {
-        toast.error(String(e));
-        onStatusChange(`Error: ${e}`);
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [customGamePath, onStatusChange, setProfiles],
-  );
-
-  useEffect(() => {
-    loadProfiles(false);
-  }, [loadProfiles]);
-
-  const selectProfile = useCallback(
-    async (path: string) => {
-      setIsLoading(true);
-      onStatusChange("Loading saves...");
-      try {
-        const fetchedSaves = await invoke<SaveInfo[]>("get_saves", {
-          profilePath: path,
-        });
-        const profile = profiles.find((p) => p.path === path);
-        if (!profile) {
-          const msg = "Profile not found";
-          toast.error(msg);
-          onStatusChange(msg);
-          return;
-        }
-        setSaves(fetchedSaves);
-        setView({ level: "saves", profile });
-        const msg = `Found ${fetchedSaves.length} saves`;
-        toast.success(msg);
-        onStatusChange(msg);
-      } catch (e) {
-        toast.error(String(e));
-        onStatusChange(`Error: ${e}`);
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [profiles, onStatusChange, setSaves, setView],
-  );
-
-  // --- Save ---
-  const selectSave = useCallback(
+  // --- Load Save Data when selectedSave changes ---
+  const loadSaveData = useCallback(
     async (gameSiiPath: string) => {
       setIsLoading(true);
       onStatusChange("Loading save...");
@@ -142,14 +73,7 @@ export function SaveEditorPage({ readOnly, onStatusChange }: SaveEditorPageProps
         setSaveData(data);
         setMoneyInput(data.money_account ?? "");
         setXpInput(data.experience_points ?? "");
-        if (view.level === "saves") {
-          const save = saves.find((s) => s.game_sii_path === gameSiiPath);
-          if (save) {
-            setView({ level: "detail", profile: view.profile, save });
-          }
-        }
         const msg = `Save loaded${data.was_compressed ? " (was compressed)" : " (plaintext)"}`;
-        toast.success(msg);
         onStatusChange(msg);
       } catch (e) {
         toast.error(String(e));
@@ -158,12 +82,20 @@ export function SaveEditorPage({ readOnly, onStatusChange }: SaveEditorPageProps
         setIsLoading(false);
       }
     },
-    [saves, view, onStatusChange, setSaveData, setMoneyInput, setXpInput, setView],
+    [onStatusChange, setSaveData, setMoneyInput, setXpInput],
   );
+
+  useEffect(() => {
+    if (selectedSave?.game_sii_path) {
+      loadSaveData(selectedSave.game_sii_path);
+    } else {
+      setSaveData(null);
+    }
+  }, [selectedSave?.game_sii_path, loadSaveData, setSaveData]);
 
   // --- Edit Money/XP ---
   const onEdit = useCallback(async () => {
-    if (view.level !== "detail") return;
+    if (!selectedSave) return;
     const money = moneyInput ? Number(moneyInput) : null;
     const xp = xpInput ? Number(xpInput) : null;
     if (money === null && xp === null) {
@@ -175,42 +107,42 @@ export function SaveEditorPage({ readOnly, onStatusChange }: SaveEditorPageProps
     onStatusChange("Saving...");
     try {
       const result = await invoke<EditResult>("edit_save", {
-        gameSiiPath: view.save.game_sii_path,
+        gameSiiPath: selectedSave.game_sii_path,
         money,
         xp,
       });
       toast.success(result.message);
       onStatusChange(result.message);
-      selectSave(view.save.game_sii_path);
+      loadSaveData(selectedSave.game_sii_path);
     } catch (e) {
       toast.error(String(e));
       onStatusChange(`Error: ${e}`);
     }
-  }, [view, moneyInput, xpInput, onStatusChange, selectSave]);
+  }, [selectedSave, moneyInput, xpInput, onStatusChange, loadSaveData]);
 
   // --- Quick Actions (with confirmation) ---
   const onUnlock = useCallback(() => {
-    if (view.level !== "detail") return;
+    if (!selectedSave) return;
     setPendingAction("unlock");
-  }, [view]);
+  }, [selectedSave]);
 
   const onMaxSkills = useCallback(() => {
-    if (view.level !== "detail") return;
+    if (!selectedSave) return;
     setPendingAction("maxSkills");
-  }, [view]);
+  }, [selectedSave]);
 
   const onRepair = useCallback(() => {
-    if (view.level !== "detail") return;
+    if (!selectedSave) return;
     setPendingAction("repair");
-  }, [view]);
+  }, [selectedSave]);
 
   const onRefuel = useCallback(() => {
-    if (view.level !== "detail") return;
+    if (!selectedSave) return;
     setPendingAction("refuel");
-  }, [view]);
+  }, [selectedSave]);
 
   const confirmAction = useCallback(async () => {
-    if (view.level !== "detail" || !pendingAction) return;
+    if (!selectedSave || !pendingAction) return;
     const action = pendingAction;
     setPendingAction(null);
 
@@ -229,149 +161,104 @@ export function SaveEditorPage({ readOnly, onStatusChange }: SaveEditorPageProps
     onStatusChange(statusLabels[action]);
     try {
       const result = await invoke<EditResult>(invokeCommands[action], {
-        gameSiiPath: view.save.game_sii_path,
+        gameSiiPath: selectedSave.game_sii_path,
       });
       toast.success(result.message);
       onStatusChange(result.message);
-      selectSave(view.save.game_sii_path);
+      loadSaveData(selectedSave.game_sii_path);
     } catch (e) {
       toast.error(String(e));
       onStatusChange(`Error: ${e}`);
     }
-  }, [view, pendingAction, onStatusChange, selectSave]);
+  }, [selectedSave, pendingAction, onStatusChange, loadSaveData]);
 
   // --- Rename / Clone / Delete ---
   const onRename = useCallback(
     async (newName: string) => {
-      if (view.level !== "detail") return;
+      if (!selectedSave) return;
       onStatusChange("Renaming save...");
       try {
         const result = await invoke<EditResult>("rename_save", {
-          gameSiiPath: view.save.game_sii_path,
+          gameSiiPath: selectedSave.game_sii_path,
           newName,
         });
         toast.success(result.message);
         onStatusChange(result.message);
-        if (view.profile) {
-          const fetchedSaves = await invoke<SaveInfo[]>("get_saves", {
-            profilePath: view.profile.path,
-          });
-          setSaves(fetchedSaves);
-          const renamedSave = fetchedSaves.find((s) => s.save_name === newName);
-          if (renamedSave) {
-            const data = await invoke<SaveData>("load_save", {
-              gameSiiPath: renamedSave.game_sii_path,
-            });
-            setSaveData(data);
-            setMoneyInput(data.money_account ?? "");
-            setXpInput(data.experience_points ?? "");
-            setView({ level: "detail", profile: view.profile, save: renamedSave });
-          } else {
-            setView({ level: "saves", profile: view.profile });
-            setSaveData(null);
-          }
-        }
+        onReloadSaves?.();
       } catch (e) {
         toast.error(String(e));
         onStatusChange(`Error: ${e}`);
       }
     },
-    [view, onStatusChange, setSaves, setView, setSaveData, setMoneyInput, setXpInput],
+    [selectedSave, onStatusChange, onReloadSaves],
   );
 
   const onClone = useCallback(
     async (newName: string) => {
-      if (view.level !== "detail") return;
+      if (!selectedSave) return;
       onStatusChange("Cloning save...");
       try {
         const result = await invoke<EditResult>("clone_save", {
-          gameSiiPath: view.save.game_sii_path,
+          gameSiiPath: selectedSave.game_sii_path,
           newName,
         });
         toast.success(result.message);
         onStatusChange(result.message);
-        if (view.profile) {
-          const fetchedSaves = await invoke<SaveInfo[]>("get_saves", {
-            profilePath: view.profile.path,
-          });
-          setSaves(fetchedSaves);
-        }
+        onReloadSaves?.();
       } catch (e) {
         toast.error(String(e));
         onStatusChange(`Error: ${e}`);
       }
     },
-    [view, onStatusChange, setSaves],
+    [selectedSave, onStatusChange, onReloadSaves],
   );
 
   const onDelete = useCallback(async () => {
-    if (view.level !== "detail") return;
+    if (!selectedSave) return;
     setDeleteTarget("save");
-  }, [view]);
+  }, [selectedSave]);
 
   const confirmDeleteSave = useCallback(async () => {
-    if (view.level !== "detail") return;
+    if (!selectedSave) return;
     setDeleteTarget(null);
     onStatusChange("Deleting save...");
     try {
       const result = await invoke<EditResult>("delete_save", {
-        gameSiiPath: view.save.game_sii_path,
+        gameSiiPath: selectedSave.game_sii_path,
       });
       toast.success(result.message);
       onStatusChange(result.message);
-      if (view.profile) {
-        const fetchedSaves = await invoke<SaveInfo[]>("get_saves", {
-          profilePath: view.profile.path,
-        });
-        setSaves(fetchedSaves);
-      }
-      setView({ level: "saves", profile: view.profile });
-      setSaveData(null);
+      setSelectedSave(null);
+      onReloadSaves?.();
     } catch (e) {
       toast.error(String(e));
       onStatusChange(`Error: ${e}`);
     }
-  }, [view, onStatusChange, setSaves, setView, setSaveData]);
-
-  const onProfileDelete = useCallback(async () => {
-    if (view.level !== "saves" && view.level !== "detail") return;
-    setDeleteTarget("profile");
-  }, [view]);
+  }, [selectedSave, onStatusChange, setSelectedSave, onReloadSaves]);
 
   const confirmDeleteProfile = useCallback(async () => {
-    if (view.level !== "saves" && view.level !== "detail") return;
+    if (!selectedProfile) return;
     setDeleteTarget(null);
-    const profile = view.profile;
     onStatusChange("Deleting profile...");
     try {
       const result = await invoke<EditResult>("delete_profile", {
-        profilePath: profile.path,
+        profilePath: selectedProfile.path,
       });
       toast.success(result.message);
       onStatusChange(result.message);
-      setView({ level: "profiles" });
-      setSaves([]);
-      setSaveData(null);
-      loadProfiles();
+      onReloadProfiles?.();
     } catch (e) {
       toast.error(String(e));
       onStatusChange(`Error: ${e}`);
     }
-  }, [view, onStatusChange, loadProfiles, setView, setSaves, setSaveData]);
+  }, [selectedProfile, onStatusChange, onReloadProfiles]);
 
   // --- Keyboard navigation ---
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (deleteTarget || pendingAction) return;
-      if (e.key === "Escape") {
-        if (view.level === "detail") {
-          navigateToSaves();
-        } else if (view.level === "saves") {
-          navigateToProfiles();
-        }
-      }
       if ((e.key === "s" || e.key === "S") && (e.metaKey || e.ctrlKey)) {
-        if (!readOnly && view.level === "detail") {
+        if (!readOnly && selectedSave && saveData) {
           e.preventDefault();
           onEdit();
         }
@@ -379,71 +266,70 @@ export function SaveEditorPage({ readOnly, onStatusChange }: SaveEditorPageProps
     }
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [
-    view.level,
-    deleteTarget,
-    pendingAction,
-    navigateToSaves,
-    navigateToProfiles,
-    readOnly,
-    onEdit,
-  ]);
+  }, [deleteTarget, pendingAction, readOnly, selectedSave, saveData, onEdit]);
 
   // --- Render ---
-  return (
-    <div className="space-y-6 h-full overflow-y-auto">
-      <div className="sticky top-0 z-10 bg-background pb-2">
-        <BreadcrumbNav
-          profileName={view.level !== "profiles" ? view.profile.display_name : undefined}
-          saveName={view.level === "detail" ? view.save.save_name : undefined}
-          onNavigateProfiles={navigateToProfiles}
-          onNavigateSaves={navigateToSaves}
-        />
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full gap-3 text-sm text-muted-foreground">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p>Loading save data...</p>
       </div>
+    );
+  }
 
-      {view.level === "profiles" && (
-        <ProfileGrid
-          profiles={profiles}
-          selectedProfile={null}
-          loading={isLoading}
-          onSelectProfile={selectProfile}
-          onLoadProfiles={() => loadProfiles(true)}
-        />
-      )}
+  if (!selectedSave || !saveData) {
+    return (
+      <div className="flex items-center justify-center h-full p-6">
+        <Empty className="py-12 border border-dashed border-border/60 rounded-2xl bg-card/30 max-w-md w-full">
+          <EmptyHeader>
+            <EmptyMedia>
+              <Save className="h-10 w-10 text-muted-foreground/60" />
+            </EmptyMedia>
+            <EmptyTitle>No save file selected</EmptyTitle>
+            <EmptyDescription>
+              {selectedProfile
+                ? `Select a save from "${selectedProfile.display_name}" in the left sidebar to view stats and make edits.`
+                : "Select a profile and save from the sidebar on the left to start editing your Euro Truck Simulator 2 save file."}
+            </EmptyDescription>
+          </EmptyHeader>
+          {selectedProfile && (
+            <EmptyContent className="pt-2">
+              <Button
+                variant="destructive"
+                size="sm"
+                className="gap-1.5 text-xs"
+                onClick={() => setDeleteTarget("profile")}
+                disabled={readOnly}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                Delete Profile ({selectedProfile.display_name})
+              </Button>
+            </EmptyContent>
+          )}
+        </Empty>
+      </div>
+    );
+  }
 
-      {view.level === "saves" && (
-        <div>
-          <div className="mb-4 flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">
-              Showing saves for{" "}
-              <span className="font-medium text-foreground">{view.profile.display_name}</span>
-            </p>
-            <Button variant="destructive" size="sm" onClick={onProfileDelete} disabled={readOnly}>
-              Delete Profile
-            </Button>
-          </div>
-          <SaveList saves={saves} loading={isLoading} onSelectSave={selectSave} />
-        </div>
-      )}
-
-      {view.level === "detail" && saveData && (
-        <SaveDetailPanel
-          saveData={saveData}
-          moneyInput={moneyInput}
-          xpInput={xpInput}
-          readOnly={readOnly}
-          onMoneyChange={setMoneyInput}
-          onXpChange={setXpInput}
-          onSaveEdits={onEdit}
-          onUnlock={onUnlock}
-          onMaxSkills={onMaxSkills}
-          onRepair={onRepair}
-          onRefuel={onRefuel}
-          onRename={onRename}
-          onClone={onClone}
-          onDelete={onDelete}
-        />
-      )}
+  return (
+    <div className="space-y-6 h-full overflow-y-auto pr-1">
+      <SaveDetailPanel
+        saveData={saveData}
+        moneyInput={moneyInput}
+        xpInput={xpInput}
+        readOnly={readOnly}
+        onMoneyChange={setMoneyInput}
+        onXpChange={setXpInput}
+        onSaveEdits={onEdit}
+        onUnlock={onUnlock}
+        onMaxSkills={onMaxSkills}
+        onRepair={onRepair}
+        onRefuel={onRefuel}
+        onRename={onRename}
+        onClone={onClone}
+        onDelete={onDelete}
+      />
 
       {/* Delete confirmation */}
       <AlertDialog
@@ -456,7 +342,8 @@ export function SaveEditorPage({ readOnly, onStatusChange }: SaveEditorPageProps
               {deleteTarget === "save" ? "Delete Save" : "Delete Profile"}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this {deleteTarget}? A backup will be created.
+              Are you sure you want to delete this {deleteTarget}? A backup will be created
+              automatically.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

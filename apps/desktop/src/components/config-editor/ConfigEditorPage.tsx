@@ -12,6 +12,7 @@ import { useSettingsStore } from "../../stores/settings";
 interface ConfigEditorPageProps {
   readOnly: boolean;
   onStatusChange: (message: string) => void;
+  selectedConfigPath?: string | null;
 }
 
 const IntSchema = v.pipe(v.string(), v.regex(/^-?\d+$/));
@@ -39,7 +40,11 @@ function validateValue(value: string, type: ConfigValueType): string | null {
   return "Invalid value";
 }
 
-export function ConfigEditorPage({ readOnly, onStatusChange }: ConfigEditorPageProps) {
+export function ConfigEditorPage({
+  readOnly,
+  onStatusChange,
+  selectedConfigPath,
+}: ConfigEditorPageProps) {
   const customGamePath = useSettingsStore((s) => s.customGamePath);
   const [configPaths, setConfigPaths] = useState<string[]>([]);
   const [selectedConfig, setSelectedConfig] = useState<string | null>(null);
@@ -99,11 +104,11 @@ export function ConfigEditorPage({ readOnly, onStatusChange }: ConfigEditorPageP
         if (!active) return;
         setConfigPaths(paths);
 
-        if (paths.length > 0) {
-          const firstPath = paths[0];
-          if (firstPath != null) {
-            await selectConfig(firstPath, activeRef);
-          }
+        const targetPath =
+          selectedConfigPath && paths.includes(selectedConfigPath) ? selectedConfigPath : paths[0];
+
+        if (targetPath != null) {
+          await selectConfig(targetPath, activeRef);
         } else {
           onStatusChange("No config files found");
         }
@@ -124,7 +129,7 @@ export function ConfigEditorPage({ readOnly, onStatusChange }: ConfigEditorPageP
       active = false;
       activeRef.current = false;
     };
-  }, [customGamePath, onStatusChange, selectConfig]);
+  }, [customGamePath, selectedConfigPath, onStatusChange, selectConfig]);
 
   const onConfigSave = useCallback(async () => {
     if (!selectedConfig || !configDoc) return;
