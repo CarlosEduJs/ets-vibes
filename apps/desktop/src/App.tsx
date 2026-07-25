@@ -21,6 +21,11 @@ interface AppVersionInfo {
   compatibility_warning: string | null;
 }
 
+function checkIsSteamSynced(path: string): boolean {
+  const p = path.toLowerCase();
+  return p.includes(".steam") || p.includes("steam/userdata") || p.includes("steamprofiles");
+}
+
 function App() {
   const { readOnly, customGamePath, setIsSettingsOpen } = useSettingsStore();
   const {
@@ -34,6 +39,7 @@ function App() {
     setSaves,
     setSelectedProfile,
     setSelectedSave,
+    setSaveData,
     setActiveWorkspace,
     setSelectedConfigPath,
   } = useSaveEditorStore();
@@ -74,7 +80,7 @@ function App() {
       .catch(() => {});
   }, [customGamePath, selectedConfigPath, setSelectedConfigPath]);
 
-  // Load profiles & auto-select first profile & save
+  // Load profiles & fetch saves for active profile (NO auto-select save)
   const loadProfiles = useCallback(
     async (showToast = false) => {
       setLoadingProfiles(true);
@@ -88,30 +94,26 @@ function App() {
         if (showToast) toast.success(msg);
         setStatus(msg);
 
-        // Auto-select first profile if non-selected or current profile deleted
+        // Select initial profile, but leave save unselected for user manual choice
         if (fetchedProfiles.length > 0) {
           const targetProf =
             fetchedProfiles.find((p) => p.path === selectedProfile?.path) || fetchedProfiles[0];
           if (targetProf) {
             setSelectedProfile(targetProf);
-            // Fetch saves for target profile
+            setSelectedSave(null);
+            setSaveData(null);
+
             setLoadingSaves(true);
             const fetchedSaves = await invoke<SaveInfo[]>("get_saves", {
               profilePath: targetProf.path,
             });
             setSaves(fetchedSaves);
             setLoadingSaves(false);
-
-            if (fetchedSaves.length > 0 && !selectedSave) {
-              const firstSave = fetchedSaves[0];
-              if (firstSave != null) {
-                setSelectedSave(firstSave);
-              }
-            }
           }
         } else {
           setSelectedProfile(null);
           setSelectedSave(null);
+          setSaveData(null);
           setSaves([]);
         }
       } catch (e) {
@@ -124,11 +126,11 @@ function App() {
     [
       customGamePath,
       selectedProfile?.path,
-      selectedSave,
       setProfiles,
       setSelectedProfile,
       setSaves,
       setSelectedSave,
+      setSaveData,
     ],
   );
 
@@ -136,10 +138,12 @@ function App() {
     loadProfiles(false);
   }, [loadProfiles]);
 
-  // Select profile handler
-  const handleSelectProfile = useCallback(
+  // Select profile onr (resets save selection)
+  const onSelectProfile = useCallback(
     async (profile: ProfileInfo) => {
       setSelectedProfile(profile);
+      setSelectedSave(null);
+      setSaveData(null);
       setLoadingSaves(true);
       setStatus("Loading saves...");
       try {
@@ -147,14 +151,6 @@ function App() {
           profilePath: profile.path,
         });
         setSaves(fetchedSaves);
-        if (fetchedSaves.length > 0) {
-          const firstSave = fetchedSaves[0];
-          if (firstSave != null) {
-            setSelectedSave(firstSave);
-          }
-        } else {
-          setSelectedSave(null);
-        }
         setStatus(`Found ${fetchedSaves.length} saves`);
       } catch (e) {
         toast.error(String(e));
@@ -163,11 +159,11 @@ function App() {
         setLoadingSaves(false);
       }
     },
-    [setSelectedProfile, setSaves, setSelectedSave],
+    [setSelectedProfile, setSelectedSave, setSaveData, setSaves],
   );
 
-  // Select save handler
-  const handleSelectSave = useCallback(
+  // Select save onr (called when user clicks save in sidebar or command palette)
+  const onSelectSave = useCallback(
     (save: SaveInfo) => {
       setSelectedSave(save);
       setActiveWorkspace("saves");
@@ -175,8 +171,8 @@ function App() {
     [setSelectedSave, setActiveWorkspace],
   );
 
-  // Select config handler
-  const handleSelectConfig = useCallback(
+  // Select config onr
+  const onSelectConfig = useCallback(
     (path: string) => {
       setSelectedConfigPath(path);
       setActiveWorkspace("config");
@@ -186,14 +182,14 @@ function App() {
 
   // Shortcut for Ctrl+, (Open Settings)
   useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
+    function onKeyDown(e: KeyboardEvent) {
       if (e.key === "," && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
         setIsSettingsOpen(true);
       }
     }
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
   }, [setIsSettingsOpen]);
 
   return (
@@ -209,9 +205,9 @@ function App() {
           selectedConfigPath={selectedConfigPath}
           loadingProfiles={loadingProfiles}
           loadingSaves={loadingSaves}
-          onSelectProfile={handleSelectProfile}
-          onSelectSave={handleSelectSave}
-          onSelectConfig={handleSelectConfig}
+          onSelectProfile={onSelectProfile}
+          onSelectSave={onSelectSave}
+          onSelectConfig={onSelectConfig}
           onRefreshProfiles={() => loadProfiles(true)}
           onOpenShortcuts={() => setIsShortcutsOpen(true)}
         />
@@ -231,7 +227,7 @@ function App() {
           <SaveEditorPage
             readOnly={readOnly}
             onStatusChange={setStatus}
-            onReloadSaves={() => selectedProfile && handleSelectProfile(selectedProfile)}
+            onReloadSaves={() => selectedProfile && onSelectProfile(selectedProfile)}
             onReloadProfiles={() => loadProfiles(true)}
           />
         ) : (
@@ -250,11 +246,13 @@ function App() {
         onOpenChange={setIsCommandPaletteOpen}
         configPaths={configPaths}
         onSelectSave={(prof, save) => {
-          handleSelectProfile(prof).then(() => {
-            if (save) handleSelectSave(save);
+          onSelectProfile(prof).then(() => {
+            if (save && !checkIsSteamSynced(save.path) && !checkIsSteamSynced(prof.path)) {
+              onSelectSave(save);
+            }
           });
         }}
-        onSelectConfig={handleSelectConfig}
+        onSelectConfig={onSelectConfig}
         onOpenShortcuts={() => setIsShortcutsOpen(true)}
       />
       <KeyboardShortcutsDialog open={isShortcutsOpen} onOpenChange={setIsShortcutsOpen} />

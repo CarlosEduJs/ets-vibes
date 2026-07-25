@@ -1,4 +1,5 @@
 import { Button, Input, Kbd, Label } from "ui";
+import { Euro, Trophy, Save } from "lucide-react";
 
 interface EditValuesFormProps {
   moneyInput: string;
@@ -19,50 +20,70 @@ export function EditValuesForm({
 }: EditValuesFormProps) {
   return (
     <form
-      className="rounded-lg border border-border p-4"
+      className="rounded-xl border border-border/30 bg-card/40 backdrop-blur-xl p-5 shadow-2xs space-y-4"
       onSubmit={(e) => {
         e.preventDefault();
         onSave();
       }}
     >
-      <h3 className="mb-4 text-sm font-semibold text-muted-foreground">Edit Values</h3>
-      {readOnly && (
-        <p className="mb-3 text-xs text-muted-foreground">
-          Editing is disabled. Toggle "Read Only" in the header to enable.
-        </p>
-      )}
+      <div>
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">
+          Account Balance & Experience
+        </h3>
+        {readOnly && (
+          <p className="mt-1 text-xs text-amber-500/90 font-medium">
+            Editing is disabled in Read Only mode.
+          </p>
+        )}
+      </div>
+
       <div className="flex flex-wrap items-end gap-4">
-        <div className="space-y-1.5">
-          <Label htmlFor="money">Money</Label>
+        <div className="space-y-1.5 flex-1 min-w-[200px]">
+          <Label
+            htmlFor="money"
+            className="text-xs flex items-center gap-1.5 text-muted-foreground"
+          >
+            <Euro className="h-3.5 w-3.5 text-emerald-500" />
+            Money (€)
+          </Label>
           <Input
             id="money"
             type="number"
             value={moneyInput}
             onChange={(e) => onMoneyChange(e.target.value)}
             disabled={readOnly}
-            className="w-48"
+            placeholder="Enter money amount"
+            className="h-9 text-xs bg-muted/20 border-border/40 focus-visible:ring-1 font-mono rounded-lg"
           />
         </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="xp">XP</Label>
+
+        <div className="space-y-1.5 flex-1 min-w-[200px]">
+          <Label htmlFor="xp" className="text-xs flex items-center gap-1.5 text-muted-foreground">
+            <Trophy className="h-3.5 w-3.5 text-amber-500" />
+            Experience Points (XP)
+          </Label>
           <Input
             id="xp"
             type="number"
             value={xpInput}
             onChange={(e) => onXpChange(e.target.value)}
             disabled={readOnly}
-            className="w-48"
+            placeholder="Enter XP amount"
+            className="h-9 text-xs bg-muted/20 border-border/40 focus-visible:ring-1 font-mono rounded-lg"
           />
         </div>
+
         <Button
           type="submit"
           disabled={readOnly}
           size="sm"
-          aria-keyshortcuts="Control+S"
-          className="gap-2"
+          className="gap-2 h-9 px-4 rounded-lg font-medium shadow-xs"
         >
-          <span>Save Changes</span>
-          <Kbd className="bg-primary-foreground/20 text-primary-foreground text-[10px]">Ctrl+S</Kbd>
+          <Save className="h-3.5 w-3.5" />
+          <span>Save Values</span>
+          <Kbd className="bg-primary-foreground/20 text-primary-foreground text-[10px] font-mono">
+            Ctrl+S
+          </Kbd>
         </Button>
       </div>
     </form>

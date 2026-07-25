@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, Kbd } from "ui";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, Kbd, KbdGroup } from "ui";
 import { Keyboard } from "lucide-react";
 
 interface ShortcutItem {
@@ -32,6 +32,11 @@ const SHORTCUTS: ShortcutItem[] = [
   {
     keys: ["?"],
     description: "Show keyboard shortcuts dialog",
+    scope: "Global",
+  },
+  {
+    keys: ["D"],
+    description: "Change theme app to Dark or Light",
     scope: "Global",
   },
 ];
@@ -95,12 +100,12 @@ export function KeyboardShortcutsDialog({
                 </div>
                 <div className="flex items-center gap-1">
                   {s.keys.map((k, kIdx) => (
-                    <span key={k} className="flex items-center gap-1">
+                    <KbdGroup key={k}>
                       <Kbd>{k}</Kbd>
                       {kIdx < s.keys.length - 1 && (
                         <span className="text-xs text-muted-foreground">+</span>
                       )}
-                    </span>
+                    </KbdGroup>
                   ))}
                 </div>
               </div>

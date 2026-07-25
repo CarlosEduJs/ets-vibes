@@ -57,41 +57,57 @@ export function SaveEditorPage({
   const saveData = useSaveEditorStore((s) => s.saveData);
   const moneyInput = useSaveEditorStore((s) => s.moneyInput);
   const xpInput = useSaveEditorStore((s) => s.xpInput);
-  const { setSaveData, setMoneyInput, setXpInput, setSelectedSave } = useSaveEditorStore();
+
+  const setSaveData = useSaveEditorStore((s) => s.setSaveData);
+  const setMoneyInput = useSaveEditorStore((s) => s.setMoneyInput);
+  const setXpInput = useSaveEditorStore((s) => s.setXpInput);
+  const setSelectedSave = useSaveEditorStore((s) => s.setSelectedSave);
 
   const [deleteTarget, setDeleteTarget] = useState<"save" | "profile" | null>(null);
   const [pendingAction, setPendingAction] = useState<QuickAction | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [refetchKey, setRefetchKey] = useState(0);
+
+  const reloadSave = useCallback(() => {
+    setRefetchKey((k) => k + 1);
+  }, []);
 
   // --- Load Save Data when selectedSave changes ---
-  const loadSaveData = useCallback(
-    async (gameSiiPath: string) => {
-      setIsLoading(true);
-      onStatusChange("Loading save...");
-      try {
-        const data = await invoke<SaveData>("load_save", { gameSiiPath });
+  const saveSiiPath = selectedSave?.game_sii_path;
+
+  useEffect(() => {
+    if (!saveSiiPath) {
+      setSaveData(null);
+      setIsLoading(false);
+      return;
+    }
+
+    let active = true;
+    setIsLoading(true);
+    onStatusChange("Loading save...");
+
+    invoke<SaveData>("load_save", { gameSiiPath: saveSiiPath })
+      .then((data) => {
+        if (!active) return;
         setSaveData(data);
         setMoneyInput(data.money_account ?? "");
         setXpInput(data.experience_points ?? "");
         const msg = `Save loaded${data.was_compressed ? " (was compressed)" : " (plaintext)"}`;
         onStatusChange(msg);
-      } catch (e) {
+      })
+      .catch((e) => {
+        if (!active) return;
         toast.error(String(e));
         onStatusChange(`Error: ${e}`);
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [onStatusChange, setSaveData, setMoneyInput, setXpInput],
-  );
+      })
+      .finally(() => {
+        if (active) setIsLoading(false);
+      });
 
-  useEffect(() => {
-    if (selectedSave?.game_sii_path) {
-      loadSaveData(selectedSave.game_sii_path);
-    } else {
-      setSaveData(null);
-    }
-  }, [selectedSave?.game_sii_path, loadSaveData, setSaveData]);
+    return () => {
+      active = false;
+    };
+  }, [saveSiiPath, refetchKey, onStatusChange, setSaveData, setMoneyInput, setXpInput]);
 
   // --- Edit Money/XP ---
   const onEdit = useCallback(async () => {
@@ -113,12 +129,12 @@ export function SaveEditorPage({
       });
       toast.success(result.message);
       onStatusChange(result.message);
-      loadSaveData(selectedSave.game_sii_path);
+      reloadSave();
     } catch (e) {
       toast.error(String(e));
       onStatusChange(`Error: ${e}`);
     }
-  }, [selectedSave, moneyInput, xpInput, onStatusChange, loadSaveData]);
+  }, [selectedSave, moneyInput, xpInput, onStatusChange, reloadSave]);
 
   // --- Quick Actions (with confirmation) ---
   const onUnlock = useCallback(() => {
@@ -165,12 +181,12 @@ export function SaveEditorPage({
       });
       toast.success(result.message);
       onStatusChange(result.message);
-      loadSaveData(selectedSave.game_sii_path);
+      reloadSave();
     } catch (e) {
       toast.error(String(e));
       onStatusChange(`Error: ${e}`);
     }
-  }, [selectedSave, pendingAction, onStatusChange, loadSaveData]);
+  }, [selectedSave, pendingAction, onStatusChange, reloadSave]);
 
   // --- Rename / Clone / Delete ---
   const onRename = useCallback(
@@ -293,20 +309,6 @@ export function SaveEditorPage({
                 : "Select a profile and save from the sidebar on the left to start editing your Euro Truck Simulator 2 save file."}
             </EmptyDescription>
           </EmptyHeader>
-          {selectedProfile && (
-            <EmptyContent className="pt-2">
-              <Button
-                variant="destructive"
-                size="sm"
-                className="gap-1.5 text-xs"
-                onClick={() => setDeleteTarget("profile")}
-                disabled={readOnly}
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-                Delete Profile ({selectedProfile.display_name})
-              </Button>
-            </EmptyContent>
-          )}
         </Empty>
       </div>
     );
