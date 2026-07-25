@@ -80,26 +80,41 @@ export function SaveDetailPanel({
 
   return (
     <>
-      <Tabs value={activeTab} onValueChange={handleTabChange} className="mt-6">
-        <TabsList className="w-full">
-          <TabsTrigger value="overview" className="flex-1 gap-2">
-            <BarChart3 className="h-4 w-4" />
-            Overview
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="mt-2 space-y-5">
+        <TabsList className="w-full bg-muted/20 border border-border/30 rounded-xl p-1 h-10 gap-1">
+          <TabsTrigger
+            value="overview"
+            className="flex-1 gap-2 text-xs font-medium rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-xs transition-all"
+          >
+            <BarChart3 className="h-3.5 w-3.5" />
+            Overview & Fleet
           </TabsTrigger>
-          <TabsTrigger value="edit" className="flex-1 gap-2">
-            <PenSquare className="h-4 w-4" />
-            Edit
+          <TabsTrigger
+            value="edit"
+            className="flex-1 gap-2 text-xs font-medium rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-xs transition-all"
+          >
+            <PenSquare className="h-3.5 w-3.5" />
+            Edit Money & XP
           </TabsTrigger>
-          <TabsTrigger value="manage" className="flex-1 gap-2">
-            <Settings className="h-4 w-4" />
-            Manage
+          <TabsTrigger
+            value="manage"
+            className="flex-1 gap-2 text-xs font-medium rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-xs transition-all"
+          >
+            <Settings className="h-3.5 w-3.5" />
+            Manage Save File
           </TabsTrigger>
         </TabsList>
-        <TabsContent value="overview" className="space-y-6">
+        <TabsContent
+          value="overview"
+          className="space-y-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-lg"
+        >
           <OverviewStats saveData={saveData} />
           <TrucksGrid trucks={saveData.trucks} />
         </TabsContent>
-        <TabsContent value="edit" className="space-y-6">
+        <TabsContent
+          value="edit"
+          className="space-y-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-lg"
+        >
           <EditValuesForm
             moneyInput={moneyInput}
             xpInput={xpInput}
@@ -116,7 +131,10 @@ export function SaveDetailPanel({
             onRefuel={onRefuel}
           />
         </TabsContent>
-        <TabsContent value="manage" className="space-y-6">
+        <TabsContent
+          value="manage"
+          className="space-y-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-lg"
+        >
           <ManageSaveSection
             readOnly={readOnly}
             onRename={onRename}
@@ -127,7 +145,7 @@ export function SaveDetailPanel({
       </Tabs>
 
       <AlertDialog open={pendingTab !== null} onOpenChange={(open) => !open && setPendingTab(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-xl border border-border/40">
           <AlertDialogHeader>
             <AlertDialogTitle>Unsaved changes</AlertDialogTitle>
             <AlertDialogDescription>
@@ -135,8 +153,10 @@ export function SaveDetailPanel({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Stay on Edit</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmTabChange}>Discard changes</AlertDialogAction>
+            <AlertDialogCancel className="rounded-lg">Stay on Edit</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmTabChange} className="rounded-lg">
+              Discard changes
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

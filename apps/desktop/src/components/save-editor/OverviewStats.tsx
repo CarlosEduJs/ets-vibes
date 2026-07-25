@@ -1,4 +1,5 @@
-import { AlertTriangle } from "lucide-react";
+import type { ElementType } from "react";
+import { AlertTriangle, Trophy, Truck, User, MapPin, Euro, Award, Clock } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "ui";
 import type { SaveData } from "../../types";
 
@@ -28,11 +29,22 @@ function fmtTimestamp(secs: number | null | undefined): string {
   return new Date(secs * 1000).toLocaleString();
 }
 
-function StatRow({ label, value }: { label: string; value: string }) {
+function StatRow({
+  label,
+  value,
+  icon: Icon,
+}: {
+  label: string;
+  value: string;
+  icon?: ElementType;
+}) {
   return (
-    <div className="flex items-center justify-between rounded-md bg-muted/50 px-3 py-1.5">
-      <span className="text-sm text-muted-foreground">{label}</span>
-      <span className="text-sm font-medium text-foreground">{value}</span>
+    <div className="flex items-center justify-between rounded-lg bg-muted/20 border border-border/20 px-3 py-2 transition-colors hover:bg-muted/30">
+      <div className="flex items-center gap-2 text-xs text-muted-foreground/80">
+        {Icon && <Icon className="h-3.5 w-3.5 text-muted-foreground/60" />}
+        <span>{label}</span>
+      </div>
+      <span className="text-xs font-semibold text-foreground font-mono">{value}</span>
     </div>
   );
 }
@@ -41,25 +53,27 @@ export function OverviewStats({ saveData }: OverviewStatsProps) {
   return (
     <div className="space-y-4">
       {saveData.compatibility_warning && (
-        <div className="flex items-start gap-3 rounded-lg bg-amber-50 p-4 dark:bg-amber-950/20">
-          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+        <div className="flex items-start gap-3 rounded-xl bg-amber-500/10 border border-amber-500/20 p-4">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
           <div>
-            <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
+            <p className="text-xs font-semibold text-amber-500">
               Game Version: {saveData.game_version ?? "Unknown"}
             </p>
-            <p className="mt-1 text-xs text-amber-700 dark:text-amber-400">
+            <p className="mt-0.5 text-xs text-amber-600/90 dark:text-amber-400/90">
               {saveData.compatibility_warning}
             </p>
           </div>
         </div>
       )}
 
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-semibold text-muted-foreground">Progress</CardTitle>
+      <Card className="border-border/30 bg-card/40 backdrop-blur-xl rounded-xl shadow-2xs">
+        <CardHeader className="pb-2.5 pt-4 px-4">
+          <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">
+            Player Progress
+          </CardTitle>
         </CardHeader>
-        <CardContent className="grid grid-cols-2 gap-2">
-          <StatRow label="Level" value={String(saveData.level ?? "N/A")} />
+        <CardContent className="grid grid-cols-2 sm:grid-cols-3 gap-2 px-4 pb-4">
+          <StatRow label="Level" value={String(saveData.level ?? "N/A")} icon={Award} />
           <StatRow
             label="Money"
             value={
@@ -67,20 +81,23 @@ export function OverviewStats({ saveData }: OverviewStatsProps) {
                 ? `${Number(saveData.money_account).toLocaleString()} €`
                 : "N/A"
             }
+            icon={Euro}
           />
-          <StatRow label="XP" value={saveData.experience_points ?? "N/A"} />
-          <StatRow label="Trucks" value={String(saveData.trucks_count ?? "N/A")} />
-          <StatRow label="Drivers" value={String(saveData.drivers_count ?? "N/A")} />
-          <StatRow label="HQ" value={saveData.hq_city ?? "N/A"} />
+          <StatRow label="XP" value={saveData.experience_points ?? "N/A"} icon={Trophy} />
+          <StatRow label="Trucks" value={String(saveData.trucks_count ?? "N/A")} icon={Truck} />
+          <StatRow label="Drivers" value={String(saveData.drivers_count ?? "N/A")} icon={User} />
+          <StatRow label="HQ City" value={saveData.hq_city ?? "N/A"} icon={MapPin} />
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-semibold text-muted-foreground">Statistics</CardTitle>
+      <Card className="border-border/30 bg-card/40 backdrop-blur-xl rounded-xl shadow-2xs">
+        <CardHeader className="pb-2.5 pt-4 px-4">
+          <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">
+            Statistics & Activity
+          </CardTitle>
         </CardHeader>
-        <CardContent className="grid grid-cols-2 gap-2">
-          <StatRow label="Game Time" value={fmtTime(saveData.game_time)} />
+        <CardContent className="grid grid-cols-2 sm:grid-cols-3 gap-2 px-4 pb-4">
+          <StatRow label="Game Time" value={fmtTime(saveData.game_time)} icon={Clock} />
           <StatRow
             label="Distance"
             value={
@@ -103,16 +120,21 @@ export function OverviewStats({ saveData }: OverviewStatsProps) {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-semibold text-muted-foreground">Details</CardTitle>
+      <Card className="border-border/30 bg-card/40 backdrop-blur-xl rounded-xl shadow-2xs">
+        <CardHeader className="pb-2.5 pt-4 px-4">
+          <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">
+            Save File Info
+          </CardTitle>
         </CardHeader>
-        <CardContent className="grid grid-cols-2 gap-2">
+        <CardContent className="grid grid-cols-2 sm:grid-cols-3 gap-2 px-4 pb-4">
           <StatRow label="New Game" value={fmtBool(saveData.new_game)} />
-          <StatRow label="Save Version" value={fmtNum(saveData.save_version)} />
-          <StatRow label="Created" value={fmtTimestamp(saveData.file_time)} />
+          <StatRow
+            label="Save Format"
+            value={saveData.was_compressed ? "ScsC (Compressed)" : "SiiN (Plaintext)"}
+          />
+          <StatRow label="Created Date" value={fmtTimestamp(saveData.file_time)} />
           {saveData.mods.length > 0 && (
-            <StatRow label="Mods / DLCs" value={`${saveData.mods.length} installed`} />
+            <StatRow label="Mods / DLCs" value={`${saveData.mods.length} active`} />
           )}
         </CardContent>
       </Card>

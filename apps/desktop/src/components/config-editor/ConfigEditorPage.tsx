@@ -8,10 +8,12 @@ import { ConfigToolbar } from "./FileSelectorBar";
 import { ConfigTable, formatKeyName } from "./ConfigTable";
 
 import { useSettingsStore } from "../../stores/settings";
+import { useSaveEditorStore } from "../../stores/save-editor";
 
 interface ConfigEditorPageProps {
   readOnly: boolean;
   onStatusChange: (message: string) => void;
+  selectedConfigPath?: string | null;
 }
 
 const IntSchema = v.pipe(v.string(), v.regex(/^-?\d+$/));
@@ -39,7 +41,11 @@ function validateValue(value: string, type: ConfigValueType): string | null {
   return "Invalid value";
 }
 
-export function ConfigEditorPage({ readOnly, onStatusChange }: ConfigEditorPageProps) {
+export function ConfigEditorPage({
+  readOnly,
+  onStatusChange,
+  selectedConfigPath,
+}: ConfigEditorPageProps) {
   const customGamePath = useSettingsStore((s) => s.customGamePath);
   const [configPaths, setConfigPaths] = useState<string[]>([]);
   const [selectedConfig, setSelectedConfig] = useState<string | null>(null);
@@ -99,10 +105,15 @@ export function ConfigEditorPage({ readOnly, onStatusChange }: ConfigEditorPageP
         if (!active) return;
         setConfigPaths(paths);
 
-        if (paths.length > 0) {
-          const firstPath = paths[0];
-          if (firstPath != null) {
-            await selectConfig(firstPath, activeRef);
+        const storeState = useSaveEditorStore.getState();
+        const currentSelected = storeState.selectedConfigPath;
+        const targetPath =
+          currentSelected && paths.includes(currentSelected) ? currentSelected : paths[0];
+
+        if (targetPath != null) {
+          await selectConfig(targetPath, activeRef);
+          if (targetPath !== currentSelected) {
+            storeState.setSelectedConfigPath(targetPath);
           }
         } else {
           onStatusChange("No config files found");
@@ -125,6 +136,12 @@ export function ConfigEditorPage({ readOnly, onStatusChange }: ConfigEditorPageP
       activeRef.current = false;
     };
   }, [customGamePath, onStatusChange, selectConfig]);
+
+  useEffect(() => {
+    if (selectedConfigPath && selectedConfigPath !== selectedConfig) {
+      selectConfig(selectedConfigPath);
+    }
+  }, [selectedConfigPath, selectedConfig, selectConfig]);
 
   const onConfigSave = useCallback(async () => {
     if (!selectedConfig || !configDoc) return;

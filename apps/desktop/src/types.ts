@@ -68,8 +68,3 @@ export interface EditResult {
   message: string;
   backup: string | null;
 }
-
-export type SaveEditorView =
-  | { level: "profiles" }
-  | { level: "saves"; profile: ProfileInfo }
-  | { level: "detail"; profile: ProfileInfo; save: SaveInfo };

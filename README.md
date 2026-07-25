@@ -8,7 +8,7 @@
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 <div align="center">
-  <img src="assets/demo-editsave.png" alt="ets-vibes save editor" width="800">
+  <img src="assets/demo-editsave-new.png" alt="ets-vibes save editor" width="800">
 </div>
 
 A cross-platform desktop app for **Euro Truck Simulator 2** (ATS support planned). Browse profiles, edit saves and config files, tweak your trucks, unlock cities, and fine-tune the game to your liking — all in one place with a clean, modern interface.
@@ -48,12 +48,7 @@ A cross-platform desktop app for **Euro Truck Simulator 2** (ATS support planned
 - **Compatibility check** — Shows the detected game version and warns if it's older than the tested range.
 
 <div align="center">
-  <img src="assets/demo-saveslist.png" alt="Save browser showing profiles and saves" width="700">
-  <p><em>Browse profiles and saves</em></p>
-</div>
-
-<div align="center">
-  <img src="assets/demo-configeditor.png" alt="Config editor with search and descriptions" width="700">
+  <img src="assets/demo-configeditor-new.png" alt="Config editor with search and descriptions" width="700">
   <p><em>Browse and edit config.cfg entries with plain-English descriptions</em></p>
 </div>
 
