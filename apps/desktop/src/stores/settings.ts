@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { getPersistStorage } from "./storage";
 
-import type { TabId } from "../components/TabBar";
+export type TabId = "saves" | "config" | "settings";
 
 interface SettingsState {
   readOnly: boolean;

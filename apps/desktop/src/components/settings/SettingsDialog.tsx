@@ -56,7 +56,6 @@ export function SettingsDialog({ appInfo }: SettingsDialogProps) {
         </DialogHeader>
 
         <div className="space-y-6 pt-2">
-          {/* Appearance */}
           <section className="space-y-3">
             <h4 className="flex items-center gap-2 text-sm font-medium text-foreground">
               <Sun className="h-4 w-4 text-muted-foreground" />
@@ -83,7 +82,6 @@ export function SettingsDialog({ appInfo }: SettingsDialogProps) {
 
           <Separator />
 
-          {/* Safety & Behavior */}
           <section className="space-y-3">
             <h4 className="flex items-center gap-2 text-sm font-medium text-foreground">
               <Shield className="h-4 w-4 text-muted-foreground" />
@@ -111,7 +109,6 @@ export function SettingsDialog({ appInfo }: SettingsDialogProps) {
 
           <Separator />
 
-          {/* Game Directory */}
           <section className="space-y-3">
             <h4 className="flex items-center gap-2 text-sm font-medium text-foreground">
               <Folder className="h-4 w-4 text-muted-foreground" />
@@ -122,7 +119,6 @@ export function SettingsDialog({ appInfo }: SettingsDialogProps) {
 
           <Separator />
 
-          {/* About */}
           <section className="space-y-3">
             <h4 className="flex items-center gap-2 text-sm font-medium text-foreground">
               <ExternalLink className="h-4 w-4 text-muted-foreground" />

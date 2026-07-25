@@ -119,7 +119,6 @@ export function SidebarNav({
   return (
     <TooltipProvider>
       <aside className="w-72 shrink-0 bg-accent/20 backdrop-blur-2xl border-r flex flex-col h-full select-none text-sidebar-foreground">
-        {/* Header Branding */}
         <div className="h-14 px-4 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2.5">
             <img src={logoSrc} alt="ETS Vibes" className="h-7 w-auto drop-shadow-sm" />
@@ -146,7 +145,6 @@ export function SidebarNav({
           </Button>
         </div>
 
-        {/* Workspace Switcher Pills */}
         <div className="p-3 border-b border-border/30">
           <div className="grid grid-cols-2 gap-1 p-1 bg-muted/30 rounded-xl border border-border/30">
             <button
@@ -176,7 +174,6 @@ export function SidebarNav({
           </div>
         </div>
 
-        {/* Search Bar */}
         <div className="px-3 pt-3 pb-2">
           <div className="relative flex items-center">
             <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground/70" />
@@ -192,7 +189,6 @@ export function SidebarNav({
           </div>
         </div>
 
-        {/* List Content */}
         <ScrollArea className="flex-1 px-3 py-2">
           {activeWorkspace === "saves" ? (
             <div className="space-y-1">
@@ -316,7 +312,6 @@ export function SidebarNav({
               )}
             </div>
           ) : (
-            /* Config Files View */
             <div className="space-y-1">
               <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70 px-2 py-1">
                 Config Files ({filteredConfigs.length})
@@ -350,9 +345,7 @@ export function SidebarNav({
           )}
         </ScrollArea>
 
-        {/* Sidebar Footer (Cursor Style App/User Tile) */}
         <div className="p-3 border-t border-border/40 bg-card/20 space-y-2.5">
-          {/* Game Path Status Tile */}
           <div className="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-muted/20 border border-border/30 text-[11px]">
             <div className="flex items-center gap-2 truncate">
               <Circle className="h-2 w-2 fill-emerald-500 text-emerald-500 shrink-0" />
@@ -363,7 +356,6 @@ export function SidebarNav({
             <span className="font-mono text-[9px] text-muted-foreground/60 shrink-0">ETS2</span>
           </div>
 
-          {/* Read Only Toggle Badge */}
           <button
             type="button"
             onClick={() => setReadOnly(!readOnly)}
@@ -384,7 +376,6 @@ export function SidebarNav({
             <span className="text-[10px] font-mono opacity-80">{readOnly ? "Safe" : "Edit"}</span>
           </button>
 
-          {/* Action Buttons */}
           <div className="flex items-center gap-1.5 pt-0.5">
             <Tooltip>
               <TooltipTrigger asChild>
@@ -417,7 +408,6 @@ export function SidebarNav({
           </div>
         </div>
 
-        {/* Steam Cloud Warning Dialog */}
         <AlertDialog
           open={pendingSteamSave !== null}
           onOpenChange={(open) => {

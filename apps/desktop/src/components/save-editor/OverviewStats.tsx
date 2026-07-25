@@ -65,7 +65,6 @@ export function OverviewStats({ saveData }: OverviewStatsProps) {
         </div>
       )}
 
-      {/* Progress Card */}
       <Card className="border-border/30 bg-card/40 backdrop-blur-xl rounded-xl shadow-2xs">
         <CardHeader className="pb-2.5 pt-4 px-4">
           <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">
@@ -90,7 +89,6 @@ export function OverviewStats({ saveData }: OverviewStatsProps) {
         </CardContent>
       </Card>
 
-      {/* Statistics Card */}
       <Card className="border-border/30 bg-card/40 backdrop-blur-xl rounded-xl shadow-2xs">
         <CardHeader className="pb-2.5 pt-4 px-4">
           <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">
@@ -121,7 +119,6 @@ export function OverviewStats({ saveData }: OverviewStatsProps) {
         </CardContent>
       </Card>
 
-      {/* Save File Details Card */}
       <Card className="border-border/30 bg-card/40 backdrop-blur-xl rounded-xl shadow-2xs">
         <CardHeader className="pb-2.5 pt-4 px-4">
           <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">

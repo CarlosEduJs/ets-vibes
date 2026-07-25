@@ -30,7 +30,6 @@ export function Header({
 
   return (
     <header className="h-14 px-6 flex items-center justify-between bg-background/40 backdrop-blur-xl shrink-0 select-none">
-      {/* Left: Active Context Breadcrumbs */}
       <div className="flex items-center gap-2 text-xs text-muted-foreground min-w-0 font-medium">
         {activeWorkspace === "saves" ? (
           <>
@@ -67,7 +66,6 @@ export function Header({
         )}
       </div>
 
-      {/* Right: Actions & Command Palette Trigger */}
       <div className="flex items-center gap-2.5">
         {appInfo?.compatibility_warning && (
           <Badge

@@ -1,7 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import {
-  Button,
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -14,11 +13,10 @@ import {
   EmptyTitle,
   EmptyHeader,
   EmptyDescription,
-  EmptyContent,
   EmptyMedia,
   toast,
 } from "ui";
-import { Loader2, Save, Trash2 } from "lucide-react";
+import { Loader2, Save } from "lucide-react";
 import type { SaveData, EditResult } from "../../types";
 import { useSaveEditorStore } from "../../stores/save-editor";
 import { SaveDetailPanel } from "./SaveDetailPanel";
@@ -333,7 +331,6 @@ export function SaveEditorPage({
         onDelete={onDelete}
       />
 
-      {/* Delete confirmation */}
       <AlertDialog
         open={deleteTarget !== null}
         onOpenChange={(open) => !open && setDeleteTarget(null)}
@@ -359,7 +356,6 @@ export function SaveEditorPage({
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Quick action confirmation */}
       <AlertDialog
         open={pendingAction !== null}
         onOpenChange={(open) => !open && setPendingAction(null)}

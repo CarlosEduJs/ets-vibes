@@ -70,7 +70,6 @@ export function CommandPalette({
         </div>
 
         <div className="max-h-80 overflow-y-auto p-2 space-y-3 text-xs">
-          {/* Quick Actions */}
           {(!q || "settings".includes(q) || "read-only".includes(q) || "shortcuts".includes(q)) && (
             <div>
               <div className="px-2 py-1 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
@@ -126,7 +125,6 @@ export function CommandPalette({
             </div>
           )}
 
-          {/* Saves */}
           {filteredSaves.length > 0 && selectedProfile && (
             <div>
               <div className="px-2 py-1 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
@@ -156,7 +154,6 @@ export function CommandPalette({
             </div>
           )}
 
-          {/* Profiles */}
           {filteredProfiles.length > 0 && (
             <div>
               <div className="px-2 py-1 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
@@ -186,7 +183,6 @@ export function CommandPalette({
             </div>
           )}
 
-          {/* Config Files */}
           {filteredConfigs.length > 0 && (
             <div>
               <div className="px-2 py-1 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
