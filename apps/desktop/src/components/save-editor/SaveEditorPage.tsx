@@ -41,15 +41,9 @@ interface SaveEditorPageProps {
   readOnly: boolean;
   onStatusChange: (message: string) => void;
   onReloadSaves?: () => void;
-  onReloadProfiles?: () => void;
 }
 
-export function SaveEditorPage({
-  readOnly,
-  onStatusChange,
-  onReloadSaves,
-  onReloadProfiles,
-}: SaveEditorPageProps) {
+export function SaveEditorPage({ readOnly, onStatusChange, onReloadSaves }: SaveEditorPageProps) {
   const selectedProfile = useSaveEditorStore((s) => s.selectedProfile);
   const selectedSave = useSaveEditorStore((s) => s.selectedSave);
   const saveData = useSaveEditorStore((s) => s.saveData);
@@ -61,7 +55,7 @@ export function SaveEditorPage({
   const setXpInput = useSaveEditorStore((s) => s.setXpInput);
   const setSelectedSave = useSaveEditorStore((s) => s.setSelectedSave);
 
-  const [deleteTarget, setDeleteTarget] = useState<"save" | "profile" | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<"save" | null>(null);
   const [pendingAction, setPendingAction] = useState<QuickAction | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [refetchKey, setRefetchKey] = useState(0);
@@ -112,6 +106,12 @@ export function SaveEditorPage({
     if (!selectedSave) return;
     const money = moneyInput ? Number(moneyInput) : null;
     const xp = xpInput ? Number(xpInput) : null;
+    if ((money !== null && !Number.isFinite(money)) || (xp !== null && !Number.isFinite(xp))) {
+      const msg = "Invalid value for money or XP";
+      toast.error(msg);
+      onStatusChange(msg);
+      return;
+    }
     if (money === null && xp === null) {
       const msg = "Enter a value for money or XP";
       toast.error(msg);
@@ -250,23 +250,6 @@ export function SaveEditorPage({
     }
   }, [selectedSave, onStatusChange, setSelectedSave, onReloadSaves]);
 
-  const confirmDeleteProfile = useCallback(async () => {
-    if (!selectedProfile) return;
-    setDeleteTarget(null);
-    onStatusChange("Deleting profile...");
-    try {
-      const result = await invoke<EditResult>("delete_profile", {
-        profilePath: selectedProfile.path,
-      });
-      toast.success(result.message);
-      onStatusChange(result.message);
-      onReloadProfiles?.();
-    } catch (e) {
-      toast.error(String(e));
-      onStatusChange(`Error: ${e}`);
-    }
-  }, [selectedProfile, onStatusChange, onReloadProfiles]);
-
   // --- Keyboard navigation ---
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -283,7 +266,9 @@ export function SaveEditorPage({
   }, [deleteTarget, pendingAction, readOnly, selectedSave, saveData, onEdit]);
 
   // --- Render ---
-  if (isLoading) {
+  const showLoading = isLoading && !saveData;
+
+  if (showLoading) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-3 text-sm text-muted-foreground">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -337,21 +322,14 @@ export function SaveEditorPage({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>
-              {deleteTarget === "save" ? "Delete Save" : "Delete Profile"}
-            </AlertDialogTitle>
+            <AlertDialogTitle>Delete Save</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this {deleteTarget}? A backup will be created
-              automatically.
+              Are you sure you want to delete this save? A backup will be created automatically.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={deleteTarget === "save" ? confirmDeleteSave : confirmDeleteProfile}
-            >
-              Delete
-            </AlertDialogAction>
+            <AlertDialogAction onClick={confirmDeleteSave}>Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

@@ -13,17 +13,13 @@ import { KeyboardShortcutsDialog } from "./components/KeyboardShortcutsDialog";
 import { useSettingsStore } from "./stores/settings";
 import { useSaveEditorStore } from "./stores/save-editor";
 import type { ProfileInfo, SaveInfo } from "./types";
+import { isSteamSynced } from "./utils/steam";
 
 interface AppVersionInfo {
   app_version: string;
   game_version: string | null;
   tested_game_version: string;
   compatibility_warning: string | null;
-}
-
-function checkIsSteamSynced(path: string): boolean {
-  const p = path.toLowerCase();
-  return p.includes(".steam") || p.includes("steam/userdata") || p.includes("steamprofiles");
 }
 
 function App() {
@@ -70,7 +66,8 @@ function App() {
     invoke<string[]>("list_configs", { customPath: customGamePath || null })
       .then((paths) => {
         setConfigPaths(paths);
-        if (paths.length > 0 && !selectedConfigPath) {
+        const storeSelected = useSaveEditorStore.getState().selectedConfigPath;
+        if (paths.length > 0 && !storeSelected) {
           const first = paths[0];
           if (first != null) {
             setSelectedConfigPath(first);
@@ -78,7 +75,7 @@ function App() {
         }
       })
       .catch(() => {});
-  }, [customGamePath, selectedConfigPath, setSelectedConfigPath]);
+  }, [customGamePath, setSelectedConfigPath]);
 
   // Load profiles & fetch saves for active profile (NO auto-select save)
   const loadProfiles = useCallback(
@@ -96,8 +93,9 @@ function App() {
 
         // Select initial profile, but leave save unselected for user manual choice
         if (fetchedProfiles.length > 0) {
+          const currentPath = useSaveEditorStore.getState().selectedProfile?.path;
           const targetProf =
-            fetchedProfiles.find((p) => p.path === selectedProfile?.path) || fetchedProfiles[0];
+            fetchedProfiles.find((p) => p.path === currentPath) || fetchedProfiles[0];
           if (targetProf) {
             setSelectedProfile(targetProf);
             setSelectedSave(null);
@@ -123,22 +121,14 @@ function App() {
         setLoadingProfiles(false);
       }
     },
-    [
-      customGamePath,
-      selectedProfile?.path,
-      setProfiles,
-      setSelectedProfile,
-      setSaves,
-      setSelectedSave,
-      setSaveData,
-    ],
+    [customGamePath, setProfiles, setSelectedProfile, setSaves, setSelectedSave, setSaveData],
   );
 
   useEffect(() => {
     loadProfiles(false);
   }, [loadProfiles]);
 
-  // Select profile onr (resets save selection)
+  // Select profile handler (resets save selection)
   const onSelectProfile = useCallback(
     async (profile: ProfileInfo) => {
       setSelectedProfile(profile);
@@ -162,7 +152,7 @@ function App() {
     [setSelectedProfile, setSelectedSave, setSaveData, setSaves],
   );
 
-  // Select save onr (called when user clicks save in sidebar or command palette)
+  // Select save handler (called when user clicks save in sidebar or command palette)
   const onSelectSave = useCallback(
     (save: SaveInfo) => {
       setSelectedSave(save);
@@ -171,7 +161,7 @@ function App() {
     [setSelectedSave, setActiveWorkspace],
   );
 
-  // Select config onr
+  // Select config handler
   const onSelectConfig = useCallback(
     (path: string) => {
       setSelectedConfigPath(path);
@@ -228,7 +218,6 @@ function App() {
             readOnly={readOnly}
             onStatusChange={setStatus}
             onReloadSaves={() => selectedProfile && onSelectProfile(selectedProfile)}
-            onReloadProfiles={() => loadProfiles(true)}
           />
         ) : (
           <ConfigEditorPage
@@ -246,11 +235,17 @@ function App() {
         onOpenChange={setIsCommandPaletteOpen}
         configPaths={configPaths}
         onSelectSave={(prof, save) => {
-          onSelectProfile(prof).then(() => {
-            if (save && !checkIsSteamSynced(save.path) && !checkIsSteamSynced(prof.path)) {
-              onSelectSave(save);
-            }
-          });
+          onSelectProfile(prof)
+            .then(() => {
+              if (save && !isSteamSynced(save.path) && !isSteamSynced(prof.path)) {
+                onSelectSave(save);
+              } else if (save && (isSteamSynced(save.path) || isSteamSynced(prof.path))) {
+                toast("Steam Cloud-synced save cannot be edited directly");
+              }
+            })
+            .catch((e) => {
+              toast.error(String(e));
+            });
         }}
         onSelectConfig={onSelectConfig}
         onOpenShortcuts={() => setIsShortcutsOpen(true)}

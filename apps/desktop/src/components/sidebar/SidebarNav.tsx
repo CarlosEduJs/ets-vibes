@@ -37,13 +37,10 @@ import {
 import type { ProfileInfo, SaveInfo } from "../../types";
 import { useSettingsStore } from "../../stores/settings";
 import { useSaveEditorStore } from "../../stores/save-editor";
+import { isSteamSynced } from "../../utils/steam";
+import { basename } from "../../utils/path";
 
 const logoSrc = "/logo.svg";
-
-function checkIsSteamSynced(path: string): boolean {
-  const p = path.toLowerCase();
-  return p.includes(".steam") || p.includes("steam/userdata") || p.includes("steamprofiles");
-}
 
 interface AppVersionInfo {
   app_version: string;
@@ -85,8 +82,12 @@ export function SidebarNav({
   onRefreshProfiles,
   onOpenShortcuts,
 }: SidebarNavProps) {
-  const { readOnly, setReadOnly, setIsSettingsOpen, customGamePath } = useSettingsStore();
-  const { activeWorkspace, setActiveWorkspace } = useSaveEditorStore();
+  const readOnly = useSettingsStore((s) => s.readOnly);
+  const setReadOnly = useSettingsStore((s) => s.setReadOnly);
+  const setIsSettingsOpen = useSettingsStore((s) => s.setIsSettingsOpen);
+  const customGamePath = useSettingsStore((s) => s.customGamePath);
+  const activeWorkspace = useSaveEditorStore((s) => s.activeWorkspace);
+  const setActiveWorkspace = useSaveEditorStore((s) => s.setActiveWorkspace);
   const [filter, setFilter] = useState("");
   const [expandedProfiles, setExpandedProfiles] = useState<Record<string, boolean>>({});
   const [pendingSteamSave, setPendingSteamSave] = useState<SaveInfo | null>(null);
@@ -99,7 +100,7 @@ export function SidebarNav({
   }
 
   function onSaveClick(save: SaveInfo, isProfileSteam: boolean) {
-    const isSaveSteam = checkIsSteamSynced(save.path) || isProfileSteam;
+    const isSaveSteam = isSteamSynced(save.path) || isProfileSteam;
     if (isSaveSteam) {
       setPendingSteamSave(save);
     } else {
@@ -204,11 +205,20 @@ export function SidebarNav({
                 filteredProfiles.map((profile) => {
                   const isProfileSelected = selectedProfile?.path === profile.path;
                   const isExpanded = expandedProfiles[profile.path] ?? isProfileSelected;
-                  const isProfileSteam = checkIsSteamSynced(profile.path);
+                  const isProfileSteam = isSteamSynced(profile.path);
 
                   return (
                     <div key={profile.path} className="space-y-0.5">
                       <div
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            onSelectProfile(profile);
+                            toggleProfileExpanded(profile.path);
+                          }
+                        }}
                         className={`group flex items-center justify-between px-2.5 py-1.5 rounded-lg cursor-pointer transition-all text-xs ${
                           isProfileSelected
                             ? "bg-accent/80 text-foreground font-medium shadow-xs"
@@ -275,7 +285,7 @@ export function SidebarNav({
                             isProfileSelected &&
                             saves.map((save) => {
                               const isSaveSelected = selectedSave?.path === save.path;
-                              const isSaveSteam = checkIsSteamSynced(save.path) || isProfileSteam;
+                              const isSaveSteam = isSteamSynced(save.path) || isProfileSteam;
 
                               return (
                                 <button
@@ -323,7 +333,7 @@ export function SidebarNav({
               ) : (
                 filteredConfigs.map((path) => {
                   const isSelected = selectedConfigPath === path;
-                  const filename = path.split("/").pop() || path;
+                  const filename = basename(path);
                   return (
                     <button
                       key={path}

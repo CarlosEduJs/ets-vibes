@@ -34,11 +34,6 @@ const SHORTCUTS: ShortcutItem[] = [
     description: "Show keyboard shortcuts dialog",
     scope: "Global",
   },
-  {
-    keys: ["D"],
-    description: "Change theme app to Dark or Light",
-    scope: "Global",
-  },
 ];
 
 interface KeyboardShortcutsDialogProps {
@@ -99,14 +94,16 @@ export function KeyboardShortcutsDialog({
                   <p className="text-xs text-muted-foreground">{s.scope}</p>
                 </div>
                 <div className="flex items-center gap-1">
-                  {s.keys.map((k, kIdx) => (
-                    <KbdGroup key={k}>
-                      <Kbd>{k}</Kbd>
-                      {kIdx < s.keys.length - 1 && (
-                        <span className="text-xs text-muted-foreground">+</span>
-                      )}
-                    </KbdGroup>
-                  ))}
+                  <KbdGroup>
+                    {s.keys.map((k, kIdx) => (
+                      <span key={k}>
+                        <Kbd>{k}</Kbd>
+                        {kIdx < s.keys.length - 1 && (
+                          <span className="text-xs text-muted-foreground">+</span>
+                        )}
+                      </span>
+                    ))}
+                  </KbdGroup>
                 </div>
               </div>
             ))}

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Dialog, DialogContent, Input, Kbd } from "ui";
 import { Search, Save, FileText, Settings, Keyboard, Shield } from "lucide-react";
 import { useSaveEditorStore } from "../stores/save-editor";
@@ -54,6 +54,11 @@ export function CommandPalette({
   const filteredSaves = saves.filter((s) => s.save_name.toLowerCase().includes(q));
 
   const filteredConfigs = configPaths.filter((c) => c.toLowerCase().includes(q));
+
+  const hasQuickActionMatches = useMemo(() => {
+    if (!q) return true;
+    return "settings".includes(q) || "read-only".includes(q) || "shortcuts".includes(q);
+  }, [q]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -166,7 +171,7 @@ export function CommandPalette({
                     type="button"
                     onClick={() => {
                       onOpenChange(false);
-                      onSelectSave(prof, saves[0]);
+                      onSelectSave(prof);
                     }}
                     className="w-full flex items-center justify-between px-3 py-2 rounded-md hover:bg-accent text-left transition-colors"
                   >
@@ -215,7 +220,8 @@ export function CommandPalette({
             </div>
           )}
 
-          {filteredProfiles.length === 0 &&
+          {!hasQuickActionMatches &&
+            filteredProfiles.length === 0 &&
             filteredSaves.length === 0 &&
             filteredConfigs.length === 0 && (
               <div className="py-6 text-center text-muted-foreground">

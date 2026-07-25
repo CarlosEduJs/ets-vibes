@@ -1,3 +1,4 @@
+import type { ElementType } from "react";
 import { AlertTriangle, Trophy, Truck, User, MapPin, Euro, Award, Clock } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "ui";
 import type { SaveData } from "../../types";
@@ -35,7 +36,7 @@ function StatRow({
 }: {
   label: string;
   value: string;
-  icon?: React.ElementType;
+  icon?: ElementType;
 }) {
   return (
     <div className="flex items-center justify-between rounded-lg bg-muted/20 border border-border/20 px-3 py-2 transition-colors hover:bg-muted/30">

@@ -104,11 +104,17 @@ export function SaveDetailPanel({
             Manage Save File
           </TabsTrigger>
         </TabsList>
-        <TabsContent value="overview" className="space-y-6 focus-visible:outline-none">
+        <TabsContent
+          value="overview"
+          className="space-y-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-lg"
+        >
           <OverviewStats saveData={saveData} />
           <TrucksGrid trucks={saveData.trucks} />
         </TabsContent>
-        <TabsContent value="edit" className="space-y-5 focus-visible:outline-none">
+        <TabsContent
+          value="edit"
+          className="space-y-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-lg"
+        >
           <EditValuesForm
             moneyInput={moneyInput}
             xpInput={xpInput}
@@ -125,7 +131,10 @@ export function SaveDetailPanel({
             onRefuel={onRefuel}
           />
         </TabsContent>
-        <TabsContent value="manage" className="space-y-6 focus-visible:outline-none">
+        <TabsContent
+          value="manage"
+          className="space-y-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-lg"
+        >
           <ManageSaveSection
             readOnly={readOnly}
             onRename={onRename}

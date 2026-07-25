@@ -100,10 +100,16 @@
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: oklch(1 0 0 / 12%);
+  background: oklch(0 0 0 / 15%);
   border-radius: 9999px;
 }
+.dark ::-webkit-scrollbar-thumb {
+  background: oklch(1 0 0 / 12%);
+}
 ::-webkit-scrollbar-thumb:hover {
+  background: oklch(0 0 0 / 25%);
+}
+.dark ::-webkit-scrollbar-thumb:hover {
   background: oklch(1 0 0 / 22%);
 }
 

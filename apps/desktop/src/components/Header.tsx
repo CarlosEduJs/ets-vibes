@@ -1,6 +1,8 @@
 import { Button, Kbd, Badge } from "ui";
 import { Search, Save, SlidersHorizontal, AlertTriangle, ChevronRight } from "lucide-react";
 import type { ProfileInfo, SaveInfo } from "../types";
+import type { WorkspaceTab } from "../stores/save-editor";
+import { basename } from "../utils/path";
 
 interface AppVersionInfo {
   app_version: string;
@@ -10,7 +12,7 @@ interface AppVersionInfo {
 }
 
 interface HeaderProps {
-  activeWorkspace: "saves" | "config";
+  activeWorkspace: WorkspaceTab;
   selectedProfile: ProfileInfo | null;
   selectedSave: SaveInfo | null;
   selectedConfigPath: string | null;
@@ -26,7 +28,7 @@ export function Header({
   appInfo,
   onOpenCommandPalette,
 }: HeaderProps) {
-  const configFilename = selectedConfigPath ? selectedConfigPath.split("/").pop() : null;
+  const configFilename = selectedConfigPath ? basename(selectedConfigPath) : null;
 
   return (
     <header className="h-14 px-6 flex items-center justify-between bg-background/40 backdrop-blur-xl shrink-0 select-none">

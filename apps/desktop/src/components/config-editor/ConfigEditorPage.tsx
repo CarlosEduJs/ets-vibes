@@ -8,6 +8,7 @@ import { ConfigToolbar } from "./FileSelectorBar";
 import { ConfigTable, formatKeyName } from "./ConfigTable";
 
 import { useSettingsStore } from "../../stores/settings";
+import { useSaveEditorStore } from "../../stores/save-editor";
 
 interface ConfigEditorPageProps {
   readOnly: boolean;
@@ -104,11 +105,16 @@ export function ConfigEditorPage({
         if (!active) return;
         setConfigPaths(paths);
 
+        const storeState = useSaveEditorStore.getState();
+        const currentSelected = storeState.selectedConfigPath;
         const targetPath =
-          selectedConfigPath && paths.includes(selectedConfigPath) ? selectedConfigPath : paths[0];
+          currentSelected && paths.includes(currentSelected) ? currentSelected : paths[0];
 
         if (targetPath != null) {
           await selectConfig(targetPath, activeRef);
+          if (targetPath !== currentSelected) {
+            storeState.setSelectedConfigPath(targetPath);
+          }
         } else {
           onStatusChange("No config files found");
         }
@@ -129,7 +135,13 @@ export function ConfigEditorPage({
       active = false;
       activeRef.current = false;
     };
-  }, [customGamePath, selectedConfigPath, onStatusChange, selectConfig]);
+  }, [customGamePath, onStatusChange, selectConfig]);
+
+  useEffect(() => {
+    if (selectedConfigPath && selectedConfigPath !== selectedConfig) {
+      selectConfig(selectedConfigPath);
+    }
+  }, [selectedConfigPath, selectedConfig, selectConfig]);
 
   const onConfigSave = useCallback(async () => {
     if (!selectedConfig || !configDoc) return;
