@@ -3,13 +3,19 @@
   <img alt="ets-vibes" src="assets/logo.svg" height="80">
 </picture>
 
-![Version](https://img.shields.io/badge/v0.1.0-beta-blue)
+![Version](https://img.shields.io/badge/v0.3.0-beta-blue)
 ![Platform](https://img.shields.io/badge/platform-windows%20%7C%20linux%20%7C%20macos-lightgrey)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 <div align="center">
   <img src="assets/demo-editsave-new.png" alt="ets-vibes save editor" width="800">
 </div>
+
+### community
+
+Join the [Discord server](https://discord.gg/t6v93XbsE) for support, feedback, and discussion.
+
+### about ets-vibes
 
 A cross-platform desktop app for **Euro Truck Simulator 2** (ATS support planned). Browse profiles, edit saves and config files, tweak your trucks, unlock cities, and fine-tune the game to your liking — all in one place with a clean, modern interface.
 
