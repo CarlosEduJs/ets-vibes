@@ -16,7 +16,11 @@ fn update_info_sii_name(save_path: &Path, new_name: &str) -> Result<(), CoreErro
     if !info_path.exists() {
         return Ok(());
     }
-    let content = fs::read_to_string(&info_path)?;
+    // info.sii is usually encrypted (ScsC); decode it first, then store it as plain text,
+    // which the game also accepts.
+    let data = fs::read(&info_path)?;
+    let content = crate::save_parser::compression::decompress_save(&data)
+        .map_err(|e| CoreError::Validation(format!("Could not read info.sii: {e}")))?;
     let mut lines: Vec<String> = content.lines().map(|l| l.to_string()).collect();
     let mut changed = false;
 
@@ -240,6 +244,19 @@ mod tests {
         let result = rename_save(&old_path, "save_b");
         assert!(result.is_err());
         assert!(matches!(result.unwrap_err(), CoreError::Validation(_)));
+    }
+
+    #[test]
+    fn test_update_info_sii_name_handles_non_utf8_input() {
+        // Anything that is not UTF-8/ScsC must give an error message, not an opaque IO error.
+        let dir = tempfile::tempdir().unwrap();
+        fs::write(
+            dir.path().join("info.sii"),
+            [0xff_u8, 0xfe, 0x00, 0x01, 0x02],
+        )
+        .unwrap();
+        let err = update_info_sii_name(dir.path(), "new").unwrap_err();
+        assert!(err.to_string().contains("info.sii"));
     }
 
     #[test]

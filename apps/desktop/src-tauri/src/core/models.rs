@@ -10,6 +10,14 @@ pub struct TruckInfo {
     pub transmission_wear: Option<f64>,
     pub cabin_wear: Option<f64>,
     pub chassis_wear: Option<f64>,
+    /// Average wear of all wheels (0.0-1.0).
+    pub wheels_wear: Option<f64>,
+    /// Brand id taken from the truck's model accessory (e.g. `renault`).
+    pub brand: Option<String>,
+    /// Model id (e.g. `t`, `s_2016`).
+    pub model: Option<String>,
+    /// True when the truck is one of the player's own vehicles, false for hired drivers' trucks.
+    pub is_player: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

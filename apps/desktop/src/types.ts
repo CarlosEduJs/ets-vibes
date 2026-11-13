@@ -23,6 +23,19 @@ export interface TruckInfo {
   transmission_wear: number | null;
   cabin_wear: number | null;
   chassis_wear: number | null;
+  wheels_wear: number | null;
+  brand: string | null;
+  model: string | null;
+  is_player: boolean;
+}
+
+export interface TruckEdit {
+  license_plate?: string;
+  engine_wear?: number;
+  transmission_wear?: number;
+  cabin_wear?: number;
+  chassis_wear?: number;
+  wheels_wear?: number;
 }
 
 export interface SaveData {

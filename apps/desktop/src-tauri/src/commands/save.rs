@@ -2,7 +2,8 @@ use std::path::Path;
 
 use crate::core::backup::backup_file;
 use crate::save_parser::{
-    compression::decompress_save, editor::get_trucks_info, editor::SaveEditor, sii::SiiDocument,
+    compression::decompress_save, editor::get_trucks_info, editor::SaveEditor, editor::TruckEdit,
+    sii::SiiDocument,
 };
 
 use super::helpers::{calc_level, read_info_sii, save_file_from_game_sii};
@@ -239,6 +240,40 @@ pub fn unlock_cities(game_sii_path: String) -> Result<EditResult, String> {
         )
     } else {
         ("No new cities to unlock.".into(), None)
+    };
+
+    Ok(EditResult { message, backup })
+}
+
+#[tauri::command]
+pub fn edit_truck(
+    game_sii_path: String,
+    truck_index: u32,
+    edit: TruckEdit,
+) -> Result<EditResult, String> {
+    let file_path = Path::new(&game_sii_path);
+    let save_file = save_file_from_game_sii(&game_sii_path)?;
+
+    let mut editor = SaveEditor::new(save_file);
+    editor.load().map_err(|e| e.to_string())?;
+    let changes = editor
+        .edit_truck(truck_index, &edit)
+        .map_err(|e| e.to_string())?;
+
+    let (message, backup) = if changes.is_empty() {
+        ("No changes made.".into(), None)
+    } else {
+        let bp = backup_file(file_path).map_err(|e| e.to_string())?;
+        editor.save().map_err(|e| e.to_string())?;
+        (
+            format!(
+                "Truck {} updated: {} (backup: {})",
+                truck_index + 1,
+                changes.join(", "),
+                bp.display()
+            ),
+            Some(bp.to_string_lossy().to_string()),
+        )
     };
 
     Ok(EditResult { message, backup })

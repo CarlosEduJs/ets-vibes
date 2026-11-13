@@ -20,6 +20,9 @@ pub enum SaveError {
     #[error("UTF-8 error: {0}")]
     Utf8(#[from] std::str::Utf8Error),
 
+    #[error("Invalid value: {0}")]
+    InvalidValue(String),
+
     #[error("Regex error: {0}")]
     Regex(#[from] regex::Error),
 }
