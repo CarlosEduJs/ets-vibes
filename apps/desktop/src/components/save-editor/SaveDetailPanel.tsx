@@ -14,7 +14,7 @@ import {
   AlertDialogTitle,
 } from "ui";
 import { BarChart3, PenSquare, Settings } from "lucide-react";
-import type { SaveData } from "../../types";
+import type { SaveData, TruckInfo } from "../../types";
 import { OverviewStats } from "./OverviewStats";
 import { TrucksGrid } from "./TrucksGrid";
 import { EditValuesForm } from "./EditValuesForm";
@@ -36,6 +36,7 @@ interface SaveDetailPanelProps {
   onRename: (newName: string) => void;
   onClone: (newName: string) => void;
   onDelete: () => void;
+  onEditTruck: (truck: TruckInfo) => void;
 }
 
 export function SaveDetailPanel({
@@ -53,6 +54,7 @@ export function SaveDetailPanel({
   onRename,
   onClone,
   onDelete,
+  onEditTruck,
 }: SaveDetailPanelProps) {
   const [activeTab, setActiveTab] = useState("overview");
   const [pendingTab, setPendingTab] = useState<string | null>(null);
@@ -109,7 +111,7 @@ export function SaveDetailPanel({
           className="space-y-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-lg"
         >
           <OverviewStats saveData={saveData} />
-          <TrucksGrid trucks={saveData.trucks} />
+          <TrucksGrid trucks={saveData.trucks} readOnly={readOnly} onEditTruck={onEditTruck} />
         </TabsContent>
         <TabsContent
           value="edit"

@@ -17,9 +17,10 @@ import {
   toast,
 } from "ui";
 import { Loader2, Save } from "lucide-react";
-import type { SaveData, EditResult } from "../../types";
+import type { SaveData, EditResult, TruckEdit, TruckInfo } from "../../types";
 import { useSaveEditorStore } from "../../stores/save-editor";
 import { SaveDetailPanel } from "./SaveDetailPanel";
+import { TruckEditDialog } from "./TruckEditDialog";
 
 type QuickAction = "unlock" | "maxSkills" | "repair" | "refuel";
 
@@ -57,6 +58,7 @@ export function SaveEditorPage({ readOnly, onStatusChange, onReloadSaves }: Save
 
   const [deleteTarget, setDeleteTarget] = useState<"save" | null>(null);
   const [pendingAction, setPendingAction] = useState<QuickAction | null>(null);
+  const [editingTruck, setEditingTruck] = useState<TruckInfo | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [refetchKey, setRefetchKey] = useState(0);
 
@@ -133,6 +135,34 @@ export function SaveEditorPage({ readOnly, onStatusChange, onReloadSaves }: Save
       onStatusChange(`Error: ${e}`);
     }
   }, [selectedSave, moneyInput, xpInput, onStatusChange, reloadSave]);
+
+  // --- Edit a single truck ---
+  const onSaveTruck = useCallback(
+    async (edit: TruckEdit) => {
+      if (!selectedSave || !editingTruck) return;
+      const truckIndex = editingTruck.index;
+      setEditingTruck(null);
+      if (Object.keys(edit).length === 0) {
+        onStatusChange("No changes made.");
+        return;
+      }
+      onStatusChange("Saving truck...");
+      try {
+        const result = await invoke<EditResult>("edit_truck", {
+          gameSiiPath: selectedSave.game_sii_path,
+          truckIndex,
+          edit,
+        });
+        toast.success(result.message);
+        onStatusChange(result.message);
+        reloadSave();
+      } catch (e) {
+        toast.error(String(e));
+        onStatusChange(`Error: ${e}`);
+      }
+    },
+    [selectedSave, editingTruck, onStatusChange, reloadSave],
+  );
 
   // --- Quick Actions (with confirmation) ---
   const onUnlock = useCallback(() => {
@@ -314,7 +344,17 @@ export function SaveEditorPage({ readOnly, onStatusChange, onReloadSaves }: Save
         onRename={onRename}
         onClone={onClone}
         onDelete={onDelete}
+        onEditTruck={setEditingTruck}
       />
+
+      {editingTruck && (
+        <TruckEditDialog
+          key={editingTruck.index}
+          truck={editingTruck}
+          onClose={() => setEditingTruck(null)}
+          onSave={onSaveTruck}
+        />
+      )}
 
       <AlertDialog
         open={deleteTarget !== null}

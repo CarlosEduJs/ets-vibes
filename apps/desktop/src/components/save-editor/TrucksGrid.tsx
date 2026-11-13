@@ -1,9 +1,12 @@
-import { Card, CardContent, CardHeader, CardTitle } from "ui";
-import { Truck } from "lucide-react";
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "ui";
+import { Pencil, Truck } from "lucide-react";
 import type { TruckInfo } from "../../types";
+import { truckName } from "../../utils/truck";
 
 interface TrucksGridProps {
   trucks: TruckInfo[];
+  readOnly: boolean;
+  onEditTruck: (truck: TruckInfo) => void;
 }
 
 function cleanLicensePlate(raw: string): string {
@@ -30,7 +33,7 @@ function WearBar({ value }: { value: number }) {
   );
 }
 
-export function TrucksGrid({ trucks }: TrucksGridProps) {
+export function TrucksGrid({ trucks, readOnly, onEditTruck }: TrucksGridProps) {
   return (
     <div>
       <div className="mb-3 flex items-center gap-2">
@@ -43,8 +46,23 @@ export function TrucksGrid({ trucks }: TrucksGridProps) {
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {trucks.map((t) => (
             <Card key={t.index}>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Truck {t.index + 1}</CardTitle>
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="flex items-center gap-2 text-sm font-medium">
+                  {truckName(t) ?? `Truck ${t.index + 1}`}
+                  <Badge variant={t.is_player ? "default" : "secondary"}>
+                    {t.is_player ? "Yours" : "Driver"}
+                  </Badge>
+                </CardTitle>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onEditTruck(t)}
+                  disabled={readOnly}
+                  title={readOnly ? "Disable read-only mode to edit" : "Edit plate and wear"}
+                >
+                  <Pencil className="mr-1 h-3 w-3" />
+                  Edit
+                </Button>
               </CardHeader>
               <CardContent className="space-y-2 text-xs">
                 {t.license_plate && (
@@ -74,7 +92,8 @@ export function TrucksGrid({ trucks }: TrucksGridProps) {
                 {(t.engine_wear != null ||
                   t.transmission_wear != null ||
                   t.cabin_wear != null ||
-                  t.chassis_wear != null) && (
+                  t.chassis_wear != null ||
+                  t.wheels_wear != null) && (
                   <div className="space-y-1.5 pt-1">
                     <div className="text-xs text-muted-foreground">Wear</div>
                     {t.engine_wear != null && (
@@ -119,6 +138,17 @@ export function TrucksGrid({ trucks }: TrucksGridProps) {
                           </span>
                         </div>
                         <WearBar value={t.chassis_wear} />
+                      </div>
+                    )}
+                    {t.wheels_wear != null && (
+                      <div className="space-y-0.5">
+                        <div className="flex items-center justify-between">
+                          <span className="text-muted-foreground">Wheels</span>
+                          <span className="font-medium text-foreground">
+                            {(t.wheels_wear * 100).toFixed(1)}%
+                          </span>
+                        </div>
+                        <WearBar value={t.wheels_wear} />
                       </div>
                     )}
                   </div>

@@ -20,6 +20,7 @@ pub fn run() {
             commands::save::max_skills,
             commands::save::repair_all,
             commands::save::refuel_all,
+            commands::save::edit_truck,
             commands::manage::rename_save,
             commands::manage::clone_save,
             commands::manage::delete_save,

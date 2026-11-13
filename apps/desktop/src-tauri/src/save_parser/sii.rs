@@ -22,6 +22,11 @@ impl SiiDocument {
         &self.content
     }
 
+    /// Replaces `start..end` of the raw content. Callers must pass valid char boundaries.
+    pub fn replace_range(&mut self, start: usize, end: usize, replacement: &str) {
+        self.content.replace_range(start..end, replacement);
+    }
+
     pub fn get_property(&self, property_name: &str) -> Option<&str> {
         let escaped = regex::escape(property_name);
         let pattern = format!(r"(?m)^\s*{}\s*:\s*(.+?)\s*$", escaped);
@@ -42,6 +47,26 @@ impl SiiDocument {
         let new_content = re.replace_all(&self.content, replacement.as_str());
         let changed = new_content != self.content;
         self.content = new_content.into_owned();
+        Ok(changed)
+    }
+
+    /// Like `set_property`, but only changes the first occurrence. Use it for values that
+    /// appear in many units (e.g. `experience_points` also exists for every hired driver).
+    pub fn set_first_property(
+        &mut self,
+        property_name: &str,
+        new_value: &str,
+    ) -> Result<bool, SaveError> {
+        let escaped = regex::escape(property_name);
+        let pattern = format!(r"(?m)(^[ \t]*{})[ \t]*:[ \t]*[^\r\n]*?([ \t]*)$", escaped);
+        let re = Regex::new(&pattern)?;
+        let new_content = re
+            .replace(&self.content, |c: &regex::Captures| {
+                format!("{}: {}{}", &c[1], new_value, &c[2])
+            })
+            .into_owned();
+        let changed = new_content != self.content;
+        self.content = new_content;
         Ok(changed)
     }
 
@@ -163,6 +188,17 @@ mod tests {
         doc.set_property("money_account", "200").unwrap();
         // no trailing newline because input had none
         assert_eq!(doc.content(), "  money_account: 200");
+    }
+
+    #[test]
+    fn test_set_first_property_only_changes_first_match() {
+        let mut doc = make_doc(" experience_points: 5\n driver {\n  experience_points: 9\n }\n");
+        assert!(doc.set_first_property("experience_points", "7").unwrap());
+        assert_eq!(
+            doc.content(),
+            " experience_points: 7\n driver {\n  experience_points: 9\n }\n"
+        );
+        assert!(!doc.set_first_property("experience_points", "7").unwrap());
     }
 
     #[test]

@@ -1,3 +1,7 @@
+use std::collections::{HashMap, HashSet};
+
+use serde::Deserialize;
+
 use crate::core::models::TruckInfo;
 use crate::core::profile::SaveFile;
 
@@ -10,6 +14,9 @@ pub fn get_trucks_info(content: &str) -> Vec<TruckInfo> {
     let count = extract_property(content, "trucks")
         .and_then(|v| v.parse::<u32>().ok())
         .unwrap_or(0);
+
+    let models = accessory_models(content);
+    let player_vehicles = player_vehicle_refs(content);
 
     let mut trucks = Vec::new();
     for i in 0..count {
@@ -31,13 +38,20 @@ pub fn get_trucks_info(content: &str) -> Vec<TruckInfo> {
         let fuel_relative =
             extract_property(section_content, "fuel_relative").and_then(parse_hex_float);
 
-        let engine_wear =
-            extract_property(section_content, "engine_wear").and_then(parse_hex_float);
-        let transmission_wear =
-            extract_property(section_content, "transmission_wear").and_then(parse_hex_float);
-        let cabin_wear = extract_property(section_content, "cabin_wear").and_then(parse_hex_float);
+        let engine_wear = effective_wear(section_content, "engine_wear", "engine_wear_unfixable");
+        let transmission_wear = effective_wear(
+            section_content,
+            "transmission_wear",
+            "transmission_wear_unfixable",
+        );
+        let cabin_wear = effective_wear(section_content, "cabin_wear", "cabin_wear_unfixable");
         let chassis_wear =
-            extract_property(section_content, "chassis_wear").and_then(parse_hex_float);
+            effective_wear(section_content, "chassis_wear", "chassis_wear_unfixable");
+
+        let wheels_wear = average_wheels_wear(section_content);
+
+        let (brand, model) = truck_model(section_content, &models);
+        let is_player = player_vehicles.contains(reference.as_str());
 
         trucks.push(TruckInfo {
             index: i,
@@ -48,6 +62,10 @@ pub fn get_trucks_info(content: &str) -> Vec<TruckInfo> {
             transmission_wear,
             cabin_wear,
             chassis_wear,
+            wheels_wear,
+            brand,
+            model,
+            is_player,
         });
     }
     trucks
@@ -163,6 +181,64 @@ SiiNunit
     }
 
     #[test]
+    fn test_get_trucks_info_effective_wear_model_and_owner() {
+        let content = "SiiNunit
+{
+ trucks: 2
+ trucks[0]: _nameless.a
+ trucks[1]: _nameless.b
+}
+player_vehicles : _nameless.pv {
+ vehicle: _nameless.b
+ stored_vehicle_city: null
+}
+vehicle : _nameless.a {
+ engine_wear: 0
+ engine_wear_unfixable: &3d800000
+ wheels_wear: 2
+ wheels_wear[0]: 0
+ wheels_wear[1]: &3f000000
+ wheels_wear_unfixable: 2
+ wheels_wear_unfixable[0]: &3d800000
+ wheels_wear_unfixable[1]: 0
+ accessories: 2
+ accessories[0]: _nameless.acc1
+ accessories[1]: _nameless.acc2
+}
+vehicle : _nameless.b {
+ engine_wear: &3f000000
+ accessories: 1
+ accessories[0]: _nameless.acc3
+}
+vehicle_accessory : _nameless.acc1 {
+ data_path: \"/def/vehicle/truck/renault.t/engine/dti11_380.sii\"
+}
+vehicle_accessory : _nameless.acc2 {
+ data_path: \"/def/vehicle/truck/renault.t/data.sii\"
+}
+vehicle_accessory : _nameless.acc3 {
+ data_path: \"/def/vehicle/truck/scania.s_2016/data.sii\"
+ refund: 0
+}
+";
+        let trucks = get_trucks_info(content);
+        assert_eq!(trucks.len(), 2);
+
+        // stored wear 0 but permanent wear 0.0625 -> effective wear is 0.0625
+        approx_eq(trucks[0].engine_wear.unwrap(), 0.0625);
+        // wheels: max(0, 0.0625) and max(0.5, 0) -> average 0.28125
+        approx_eq(trucks[0].wheels_wear.unwrap(), 0.28125);
+        assert_eq!(trucks[0].brand.as_deref(), Some("renault"));
+        assert_eq!(trucks[0].model.as_deref(), Some("t"));
+        assert!(!trucks[0].is_player);
+
+        approx_eq(trucks[1].engine_wear.unwrap(), 0.5);
+        assert_eq!(trucks[1].brand.as_deref(), Some("scania"));
+        assert_eq!(trucks[1].model.as_deref(), Some("s_2016"));
+        assert!(trucks[1].is_player);
+    }
+
+    #[test]
     fn test_get_trucks_info_missing_section() {
         let content = "SiiNunit\n{\n trucks: 1\n trucks[0]: \"missing.ref\"\n}\n";
         let trucks = get_trucks_info(content);
@@ -192,6 +268,140 @@ mod editor_tests {
         (SaveEditor::new(save_file), dir)
     }
 
+    const TWO_TRUCKS: &str = "SiiNunit
+{
+ trucks: 2
+ trucks[0]: _nameless.a
+ trucks[1]: _nameless.b
+}
+vehicle : _nameless.a {
+ engine_wear: &3f000000
+ engine_wear_unfixable: &3f000000
+ cabin_wear: 0
+ cabin_wear_unfixable: &3d62bc63
+ odometer: 1000
+ license_plate: \"AAA|spain\"
+ license_plate_type: truck
+ chassis_wear: 0
+ wheels_wear: 2
+ wheels_wear[0]: &3f000000
+ wheels_wear[1]: &3f000000
+ wheels_wear_unfixable: 2
+ wheels_wear_unfixable[0]: &3e800000
+ wheels_wear_unfixable[1]: &3f000000
+}
+vehicle : _nameless.b {
+ engine_wear: &3f000000
+ engine_wear_unfixable: &3f000000
+ license_plate: \"BBB|spain\"
+ chassis_wear: 0
+}
+";
+
+    #[test]
+    fn test_edit_truck_only_touches_selected_truck() {
+        let (mut editor, _dir) = make_save_editor(TWO_TRUCKS);
+        editor.load().unwrap();
+        let edit = TruckEdit {
+            engine_wear: Some(0.0),
+            license_plate: Some("NEW|belgium".into()),
+            ..Default::default()
+        };
+        let changes = editor.edit_truck(0, &edit).unwrap();
+        assert_eq!(changes, vec!["license_plate", "engine_wear"]);
+
+        let content = editor.document.as_ref().unwrap().content().to_string();
+        let a = extract_section(&content, "_nameless.a").unwrap();
+        let b = extract_section(&content, "_nameless.b").unwrap();
+        assert_eq!(
+            extract_property(a, "license_plate").unwrap(),
+            "\"NEW|belgium\""
+        );
+        assert_eq!(extract_property(a, "engine_wear").unwrap(), "0");
+        // unfixable can never exceed current wear
+        assert_eq!(extract_property(a, "engine_wear_unfixable").unwrap(), "0");
+        // untouched fields stay as they were
+        assert_eq!(extract_property(a, "odometer").unwrap(), "1000");
+        // the other truck is untouched
+        assert_eq!(
+            extract_property(b, "license_plate").unwrap(),
+            "\"BBB|spain\""
+        );
+        assert_eq!(extract_property(b, "engine_wear").unwrap(), "&3f000000");
+    }
+
+    #[test]
+    fn test_edit_truck_sets_hex_wear_and_keeps_lower_unfixable() {
+        let (mut editor, _dir) = make_save_editor(TWO_TRUCKS);
+        editor.load().unwrap();
+        let edit = TruckEdit {
+            cabin_wear: Some(0.5),
+            ..Default::default()
+        };
+        editor.edit_truck(0, &edit).unwrap();
+        let content = editor.document.as_ref().unwrap().content().to_string();
+        let a = extract_section(&content, "_nameless.a").unwrap();
+        assert_eq!(extract_property(a, "cabin_wear").unwrap(), "&3f000000");
+        // unfixable (0.054) is below the new wear, so it is kept
+        assert_eq!(
+            extract_property(a, "cabin_wear_unfixable").unwrap(),
+            "&3d62bc63"
+        );
+    }
+
+    #[test]
+    fn test_edit_truck_wheels() {
+        let (mut editor, _dir) = make_save_editor(TWO_TRUCKS);
+        editor.load().unwrap();
+        let edit = TruckEdit {
+            wheels_wear: Some(0.0),
+            ..Default::default()
+        };
+        editor.edit_truck(0, &edit).unwrap();
+        let content = editor.document.as_ref().unwrap().content().to_string();
+        let a = extract_section(&content, "_nameless.a").unwrap();
+        assert_eq!(average_wheels_wear(a), Some(0.0));
+        assert_eq!(
+            extract_property(a, "wheels_wear_unfixable[0]").unwrap(),
+            "0"
+        );
+        assert_eq!(
+            extract_property(a, "wheels_wear_unfixable[1]").unwrap(),
+            "0"
+        );
+    }
+
+    #[test]
+    fn test_edit_truck_rejects_bad_input() {
+        let (mut editor, _dir) = make_save_editor(TWO_TRUCKS);
+        editor.load().unwrap();
+        let bad_wear = TruckEdit {
+            engine_wear: Some(1.5),
+            ..Default::default()
+        };
+        assert!(editor.edit_truck(0, &bad_wear).is_err());
+        let bad_plate = TruckEdit {
+            license_plate: Some("a\"b".into()),
+            ..Default::default()
+        };
+        assert!(editor.edit_truck(0, &bad_plate).is_err());
+        assert!(editor.edit_truck(9, &TruckEdit::default()).is_err());
+    }
+
+    #[test]
+    fn test_edit_truck_plate_with_dollar_is_literal() {
+        let (mut editor, _dir) = make_save_editor(TWO_TRUCKS);
+        editor.load().unwrap();
+        let edit = TruckEdit {
+            license_plate: Some("$1$2".into()),
+            ..Default::default()
+        };
+        editor.edit_truck(1, &edit).unwrap();
+        let content = editor.document.as_ref().unwrap().content().to_string();
+        let b = extract_section(&content, "_nameless.b").unwrap();
+        assert_eq!(extract_property(b, "license_plate").unwrap(), "\"$1$2\"");
+    }
+
     #[test]
     fn test_load_plain_text() {
         let (mut editor, _dir) = make_save_editor("SiiNunit\n{\n}\n");
@@ -219,6 +429,18 @@ mod editor_tests {
         let (mut editor, _dir) = make_save_editor("SiiNunit\n{\n money_account: 100500\n}\n");
         editor.load().unwrap();
         assert_eq!(editor.get_property("money_account").unwrap(), "100500");
+    }
+
+    #[test]
+    fn test_edit_xp_does_not_touch_other_experience_points() {
+        let (mut editor, _dir) = make_save_editor(
+            "SiiNunit\n{\n experience_points: 100\n}\ndriver_ai : d {\n experience_points: 777\n}\n",
+        );
+        editor.load().unwrap();
+        editor.edit_xp(5000).unwrap();
+        let content = editor.document.as_ref().unwrap().content().to_string();
+        assert!(content.contains(" experience_points: 5000\n"));
+        assert!(content.contains(" experience_points: 777\n"));
     }
 
     #[test]
@@ -410,6 +632,12 @@ fn extract_property<'a>(content: &'a str, name: &str) -> Option<&'a str> {
 }
 
 fn extract_section<'a>(content: &'a str, section_name: &str) -> Option<&'a str> {
+    let (start, end) = section_range(content, section_name)?;
+    Some(&content[start..end])
+}
+
+/// Byte range of the `{ ... }` block (including its header line) of a unit.
+fn section_range(content: &str, section_name: &str) -> Option<(usize, usize)> {
     let escaped = regex::escape(section_name);
     // Section may be defined as "name {" or "type : name {"
     let pattern = format!(r"(?m)^\s*(?:\S+\s+:\s+)?{}\s*\{{", escaped);
@@ -430,10 +658,161 @@ fn extract_section<'a>(content: &'a str, section_name: &str) -> Option<&'a str> 
     }
 
     if depth == 0 {
-        Some(&content[m.start()..pos])
+        Some((m.start(), pos))
     } else {
         None
     }
+}
+
+/// Wear as the game applies it: the stored value can be lower than the permanent
+/// (`_unfixable`) part (the game stores 0 for trucks it doesn't simulate), but the
+/// effective wear is never below the permanent part.
+fn effective_wear(section: &str, name: &str, unfixable_name: &str) -> Option<f64> {
+    let wear = extract_property(section, name).and_then(parse_hex_float)?;
+    let unfixable = extract_property(section, unfixable_name)
+        .and_then(parse_hex_float)
+        .unwrap_or(0.0);
+    Some(wear.max(unfixable))
+}
+
+fn average_wheels_wear(section: &str) -> Option<f64> {
+    let count = extract_property(section, "wheels_wear").and_then(|v| v.parse::<usize>().ok())?;
+    let values: Vec<f64> = (0..count)
+        .filter_map(|i| {
+            effective_wear(
+                section,
+                &format!("wheels_wear[{i}]"),
+                &format!("wheels_wear_unfixable[{i}]"),
+            )
+        })
+        .collect();
+    if values.is_empty() {
+        None
+    } else {
+        Some(values.iter().sum::<f64>() / values.len() as f64)
+    }
+}
+
+#[allow(clippy::expect_used)]
+static MODEL_ACCESSORY_RE: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| {
+    regex::Regex::new(
+        r#"(?m)^vehicle_accessory : (\S+) \{\s*\n\s*data_path: "/def/vehicle/truck/([^/"]+)/data\.sii""#,
+    )
+    .expect("invalid regex pattern")
+});
+
+#[allow(clippy::expect_used)]
+static PLAYER_VEHICLE_RE: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| {
+    regex::Regex::new(r"(?m)^player_vehicles : \S+ \{\s*\n\s*vehicle: (\S+)")
+        .expect("invalid regex pattern")
+});
+
+/// Accessory unit reference -> truck model id (`brand.model`) for every model accessory.
+fn accessory_models(content: &str) -> HashMap<String, String> {
+    MODEL_ACCESSORY_RE
+        .captures_iter(content)
+        .map(|c| (c[1].to_string(), c[2].to_string()))
+        .collect()
+}
+
+/// References of the vehicles that belong to the player (not to hired drivers).
+fn player_vehicle_refs(content: &str) -> HashSet<String> {
+    PLAYER_VEHICLE_RE
+        .captures_iter(content)
+        .map(|c| c[1].to_string())
+        .collect()
+}
+
+/// Splits e.g. `scania.s_2016` into (`scania`, `s_2016`).
+fn truck_model(
+    section: &str,
+    models: &HashMap<String, String>,
+) -> (Option<String>, Option<String>) {
+    let count = extract_property(section, "accessories")
+        .and_then(|v| v.parse::<usize>().ok())
+        .unwrap_or(0);
+    for i in 0..count {
+        let Some(reference) = extract_property(section, &format!("accessories[{i}]")) else {
+            continue;
+        };
+        if let Some(id) = models.get(reference.trim()) {
+            return match id.split_once('.') {
+                Some((brand, model)) => (Some(brand.to_string()), Some(model.to_string())),
+                None => (Some(id.clone()), None),
+            };
+        }
+    }
+    (None, None)
+}
+
+/// Formats a 0.0-1.0 float the way the game writes it (`0`, or `&` + f32 hex bits).
+fn format_sii_float(v: f64) -> String {
+    if v == 0.0 {
+        "0".to_string()
+    } else {
+        format!("&{:08x}", (v as f32).to_bits())
+    }
+}
+
+/// Replaces the value of `name: value` inside `section` only. Returns true if it changed.
+fn set_in_section(section: &mut String, name: &str, value: &str) -> bool {
+    let pattern = format!(
+        r"(?m)^([ \t]*{}[ \t]*:[ \t]*)[^\r\n]*?([ \t]*)$",
+        regex::escape(name)
+    );
+    let Ok(re) = regex::Regex::new(&pattern) else {
+        return false;
+    };
+    let updated = re
+        .replace(section, |c: &regex::Captures| {
+            format!("{}{}{}", &c[1], value, &c[2])
+        })
+        .into_owned();
+    let changed = updated != *section;
+    *section = updated;
+    changed
+}
+
+/// Sets `name` to `v` and lowers its `<name>_unfixable` counterpart if it would exceed `v`
+/// (permanent wear can never be higher than the current wear).
+fn set_wear(section: &mut String, name: &str, unfixable: &str, v: f64) -> bool {
+    let changed = set_in_section(section, name, &format_sii_float(v));
+    let current = extract_property(section, unfixable).and_then(parse_hex_float);
+    if current.is_some_and(|u| u > v) {
+        set_in_section(section, unfixable, &format_sii_float(v));
+    }
+    changed
+}
+
+/// Fields to change on a single truck. `None` leaves a field untouched.
+/// Wear values are fractions between 0.0 (new) and 1.0 (destroyed).
+#[derive(Debug, Clone, Default, Deserialize)]
+pub struct TruckEdit {
+    pub license_plate: Option<String>,
+    pub engine_wear: Option<f64>,
+    pub transmission_wear: Option<f64>,
+    pub cabin_wear: Option<f64>,
+    pub chassis_wear: Option<f64>,
+    pub wheels_wear: Option<f64>,
+}
+
+fn validate_wear(label: &str, v: f64) -> Result<f64, SaveError> {
+    if v.is_finite() && (0.0..=1.0).contains(&v) {
+        Ok(v)
+    } else {
+        Err(SaveError::InvalidValue(format!(
+            "{label} must be between 0 and 1"
+        )))
+    }
+}
+
+fn validate_plate(plate: &str) -> Result<(), SaveError> {
+    if plate.len() > 2048 || plate.contains(['"', '\n', '\r']) {
+        return Err(SaveError::InvalidValue(
+            "License plate must not contain quotes or line breaks".into(),
+        ));
+    }
+    Ok(())
 }
 
 pub struct SaveEditor {
@@ -477,12 +856,13 @@ impl SaveEditor {
 
     pub fn edit_money(&mut self, amount: i64) -> Result<bool, SaveError> {
         self.document_mut()?
-            .set_property("money_account", &amount.to_string())
+            .set_first_property("money_account", &amount.to_string())
     }
 
     pub fn edit_xp(&mut self, xp: i64) -> Result<bool, SaveError> {
+        // Only the player's value: every hired driver and log entry has its own experience_points.
         self.document_mut()?
-            .set_property("experience_points", &xp.to_string())
+            .set_first_property("experience_points", &xp.to_string())
     }
 
     pub fn unlock_all_cities(&mut self) -> Result<usize, SaveError> {
@@ -596,6 +976,74 @@ impl SaveEditor {
         }
 
         Ok(changed)
+    }
+
+    /// Edits one of the player's trucks (`trucks[index]`) without touching any other vehicle.
+    /// Returns a human-readable list of the fields that changed.
+    pub fn edit_truck(&mut self, index: u32, edit: &TruckEdit) -> Result<Vec<String>, SaveError> {
+        let wear_fields = [
+            ("engine_wear", edit.engine_wear),
+            ("transmission_wear", edit.transmission_wear),
+            ("cabin_wear", edit.cabin_wear),
+            ("chassis_wear", edit.chassis_wear),
+        ];
+        for (name, value) in wear_fields {
+            if let Some(v) = value {
+                validate_wear(name, v)?;
+            }
+        }
+        if let Some(v) = edit.wheels_wear {
+            validate_wear("wheels_wear", v)?;
+        }
+        if let Some(plate) = &edit.license_plate {
+            validate_plate(plate)?;
+        }
+
+        let content = self.document()?.content();
+        let reference = extract_property(content, &format!("trucks[{index}]"))
+            .map(|r| r.trim().to_string())
+            .ok_or_else(|| SaveError::InvalidValue(format!("Truck {index} not found")))?;
+        let (start, end) = section_range(content, &reference)
+            .ok_or_else(|| SaveError::InvalidValue(format!("Truck {index} data not found")))?;
+        let mut section = content[start..end].to_string();
+
+        let mut changes = Vec::new();
+
+        if let Some(plate) = &edit.license_plate {
+            if set_in_section(&mut section, "license_plate", &format!("\"{plate}\"")) {
+                changes.push("license_plate".to_string());
+            }
+        }
+
+        for (name, value) in wear_fields {
+            let Some(v) = value else { continue };
+            if set_wear(&mut section, name, &format!("{name}_unfixable"), v) {
+                changes.push(name.to_string());
+            }
+        }
+
+        if let Some(v) = edit.wheels_wear {
+            let count = extract_property(&section, "wheels_wear")
+                .and_then(|c| c.parse::<usize>().ok())
+                .unwrap_or(0);
+            let mut any = false;
+            for i in 0..count {
+                any |= set_wear(
+                    &mut section,
+                    &format!("wheels_wear[{i}]"),
+                    &format!("wheels_wear_unfixable[{i}]"),
+                    v,
+                );
+            }
+            if any {
+                changes.push("wheels_wear".to_string());
+            }
+        }
+
+        if !changes.is_empty() {
+            self.document_mut()?.replace_range(start, end, &section);
+        }
+        Ok(changes)
     }
 
     pub fn save(&mut self) -> Result<(), SaveError> {
